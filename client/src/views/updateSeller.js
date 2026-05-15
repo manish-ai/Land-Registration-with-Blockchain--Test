@@ -4,7 +4,7 @@ import getWeb3 from "../getWeb3"
 
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Table, Spinner } from 'react-bootstrap';
 import {
     Button,
@@ -25,7 +25,7 @@ import {
     AccountData,
     ContractData,
     ContractForm
-} from 'drizzle-react-components'
+} from '../drizzle-shims/drizzle-react-components'
 
 const drizzleOptions = {
     contracts: [Land]
@@ -59,19 +59,13 @@ class updateSeller extends Component {
     }
 
     componentDidMount = async () => {
-        //For refreshing page only once
-        if(!window.location.hash){
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try{
             //Get network provider and web3 instance
             const web3 = await getWeb3();
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = await web3.currentProvider.selectedAddress;
+            const currentAddress = accounts[0];
             console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];

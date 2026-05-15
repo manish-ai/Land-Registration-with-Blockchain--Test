@@ -3,7 +3,7 @@ import { Line, Bar } from "react-chartjs-2";
 import LandContract from "../artifacts/Land.json";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner  } from 'react-bootstrap';
 import {  Link} from 'react-router-dom';
 import {
@@ -11,7 +11,7 @@ import {
   AccountData,
   ContractData,
   ContractForm
-} from 'drizzle-react-components';
+} from '../drizzle-shims/drizzle-react-components';
 
 import viewImage from './viewImage';
 
@@ -64,12 +64,6 @@ class OwnedLands extends Component {
 }
 
   componentDidMount = async () => {
-    //For refreshing page only once
-    if (!window.location.hash) {
-      window.location = window.location + '#loaded';
-      window.location.reload();
-    }
-
     try {
       //Get network provider and web3 instance
       const web3 = await getWeb3();
@@ -83,7 +77,7 @@ class OwnedLands extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      const currentAddress = await web3.currentProvider.selectedAddress;
+      const currentAddress = accounts[0];
       console.log(currentAddress);
       this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
       verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();

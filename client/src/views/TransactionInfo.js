@@ -4,14 +4,14 @@ import getWeb3 from "../getWeb3";
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
 import {
     LoadingContainer,
     AccountData,
     ContractData,
     ContractForm
-} from 'drizzle-react-components'
+} from '../drizzle-shims/drizzle-react-components'
 
 // reactstrap components
 import {
@@ -76,19 +76,13 @@ class TransactionInfo extends Component {
 
 
     componentDidMount = async () => {
-        //For refreshing page only once
-        if (!window.location.hash) {
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try {
             //Get network provider and web3 instance
             const web3 = await getWeb3();
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = await web3.currentProvider.selectedAddress;
+            const currentAddress = accounts[0];
             //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -142,7 +136,7 @@ class TransactionInfo extends Component {
 
 
             }
-
+            this.forceUpdate();
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -216,7 +210,9 @@ class TransactionInfo extends Component {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {landTable}
+                                                {landTable.length > 0 ? landTable : (
+                                                    <tr><td colSpan="9" style={{textAlign: "center", color: "#888"}}>No land transactions found.</td></tr>
+                                                )}
                                             </tbody>
                                         </Table>
                                     </CardBody>

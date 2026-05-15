@@ -4,14 +4,14 @@ import Login from "./login.component";
 import ReactDOM from 'react-dom';
 import './index.css';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from './drizzle-shims/drizzle-react';
 
 import {
     LoadingContainer,
     AccountData,
     ContractData,
     ContractForm
-} from 'drizzle-react-components'
+} from './drizzle-shims/drizzle-react-components'
 
 const drizzleOptions = {
     contracts: [Land]

@@ -5,8 +5,7 @@ import './index.css';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { Router, Switch, Route, Redirect } from 'react-router-dom';
-import history from './history';
+import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
 import RegisterBuyer from "./RegisterBuyer";
 import RegisterSeller from "./RegisterSeller";
 import AdminLayout from "./layouts/Admin/Admin";
@@ -23,7 +22,7 @@ import Help from './Help';
 ReactDOM.render(
   <ThemeContextWrapper>
     <BackgroundColorWrapper>
-      <Router history={history}>
+      <BrowserRouter>
         <Switch>
           <Route exact path='/' component={Login} />
           <Route path="/RegisterBuyer" component={RegisterBuyer} />
@@ -34,7 +33,7 @@ ReactDOM.render(
           <Route exact path='/Help' component={Help} />
 
         </Switch>
-      </Router>
+      </BrowserRouter>
     </BackgroundColorWrapper>
   </ThemeContextWrapper>,
   document.getElementById('root')

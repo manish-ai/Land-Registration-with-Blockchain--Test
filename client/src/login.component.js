@@ -20,11 +20,6 @@ export default class Login extends Component {
     }
 
     componentDidMount = async () => {
-        if (!window.location.hash) {
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try {
             //Get network provider and web3 instance
             const web3 = await getWeb3();
@@ -38,15 +33,15 @@ export default class Login extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            const currentAddress = await web3.currentProvider.selectedAddress;
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-            var seller = await this.state.LandInstance.methods.isSeller(currentAddress).call();
+            const currentAddress = accounts[0];
+            this.setState({ LandInstance: instance, web3: web3, account: currentAddress });
+            var seller = await instance.methods.isSeller(currentAddress).call();
             console.log(seller);
             this.setState({ seller: seller });
-            var buyer = await this.state.LandInstance.methods.isBuyer(currentAddress).call();
+            var buyer = await instance.methods.isBuyer(currentAddress).call();
             console.log(buyer);
             this.setState({ buyer: buyer });
-            var landInspector = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
+            var landInspector = await instance.methods.isLandInspector(currentAddress).call();
             console.log(landInspector);
             this.setState({ landInspector: landInspector });
 
@@ -116,10 +111,10 @@ export default class Login extends Component {
                                 }}
                             />
 
-                            <div class="form-group" style={{ color: "black" }}>
-                                <label class="control-label" for="Company" style={{ fontSize: "18px", padding: "2px" }}>Select Role</label>
-                                <select id="Company" class="form-control" name="Company" onChange={this.handleInputChange}>
-                                    <option selected="true" disabled="disabled">Select Role</option>
+                            <div className="form-group" style={{ color: "black" }}>
+                                <label className="control-label" htmlFor="Company" style={{ fontSize: "18px", padding: "2px" }}>Select Role</label>
+                                <select id="Company" className="form-control" name="Company" defaultValue="" onChange={this.handleInputChange}>
+                                    <option value="" disabled>Select Role</option>
                                     <option value="Buyer">Buyer</option>
                                     <option value="Seller">Seller</option>
                                 </select>

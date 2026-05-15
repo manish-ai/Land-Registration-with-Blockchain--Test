@@ -4,14 +4,14 @@ import getWeb3 from "../getWeb3";
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
 import {
     LoadingContainer,
     AccountData,
     ContractData,
     ContractForm
-} from 'drizzle-react-components'
+} from '../drizzle-shims/drizzle-react-components'
 
 // reactstrap components
 import {
@@ -107,19 +107,13 @@ class BuyerInfo extends Component {
     }
 
     componentDidMount = async () => {
-        //For refreshing page only once
-        if (!window.location.hash) {
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try {
             //Get network provider and web3 instance
             const web3 = await getWeb3();
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = await web3.currentProvider.selectedAddress;
+            const currentAddress = accounts[0];
             //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -150,7 +144,7 @@ class BuyerInfo extends Component {
                 var buyer_verify = await this.state.LandInstance.methods.isVerified(buyersMap[i]).call();
                 console.log(buyer_verify);
                 buyer.verified = buyer_verify;
-                
+
                 var not_verify = await this.state.LandInstance.methods.isRejected(buyersMap[i]).call();
                 console.log(not_verify);
                 buyerTable.push(<tr><td>{i + 1}</td><td>{buyersMap[i]}</td><td>{buyer[0]}</td><td>{buyer[5]}</td><td>{buyer[4]}</td><td>{buyer[1]}</td><td>{buyer[6]}</td><td>{buyer[2]}</td><td><a href={`https://ipfs.io/ipfs/${buyer[3]}`} target="_blank">Click Here</a></td>
@@ -168,6 +162,7 @@ class BuyerInfo extends Component {
                 </tr>)
 
             }
+            this.setState({ buyers: buyerTable.length });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -244,7 +239,9 @@ class BuyerInfo extends Component {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {buyerTable}
+                                                {buyerTable.length > 0 ? buyerTable : (
+                                                    <tr><td colSpan="12" style={{textAlign: "center", color: "#888"}}>No buyers registered yet.</td></tr>
+                                                )}
                                             </tbody>
 
                                         </Table>

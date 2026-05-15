@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner  } from 'react-bootstrap';
 import {
   LoadingContainer,
   AccountData,
   ContractData,
   ContractForm
-} from 'drizzle-react-components';
+} from '../drizzle-shims/drizzle-react-components';
 import "../index.css";
 
 // reactstrap components
@@ -65,11 +65,7 @@ class viewImage extends Component {
 }
 
   componentDidMount = async () => {
-    //For refreshing page only once
-    if (!window.location.hash) {
-      window.location = window.location + '#loaded';
-      window.location.reload();
-    }
+
 
     try {
       //Get network provider and web3 instance
@@ -84,7 +80,7 @@ class viewImage extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      const currentAddress = await web3.currentProvider.selectedAddress;
+      const currentAddress = accounts[0];
       console.log(currentAddress);
       this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
       verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();

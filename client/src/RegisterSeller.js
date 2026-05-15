@@ -29,12 +29,6 @@ class RegisterSeller extends Component {
     }
 
     componentDidMount = async () => {
-        //For refreshing page only once
-        if (!window.location.hash) {
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try {
             //Get network provider and web3 instance
             const web3 = await getWeb3();

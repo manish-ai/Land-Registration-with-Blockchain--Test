@@ -4,14 +4,14 @@ import classNames from "classnames";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
 import {
   LoadingContainer,
   AccountData,
   ContractData,
   ContractForm
-} from 'drizzle-react-components'
+} from '../drizzle-shims/drizzle-react-components'
 // reactstrap components
 import {
   Button,
@@ -82,13 +82,6 @@ class Dashboard extends Component {
   }
 
   componentDidMount = async () => {
-    //For refreshing page only once
-    if (!window.location.hash) {
-      console.log(window.location.hash);
-      window.location = window.location + '#loaded';
-      window.location.reload();
-    }
-
     try {
       //Get network provider and web3 instance
       const web3 = await getWeb3();
@@ -104,7 +97,7 @@ class Dashboard extends Component {
 
       this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
 
-      const currentAddress = await web3.currentProvider.selectedAddress;
+      const currentAddress = accounts[0];
       console.log(currentAddress);
       var registered = await this.state.LandInstance.methods.isBuyer(currentAddress).call();
       console.log(registered);
@@ -163,9 +156,7 @@ class Dashboard extends Component {
         </tr>)
       }
       console.log(row);
-
-
-
+      this.forceUpdate();
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -328,7 +319,9 @@ class Dashboard extends Component {
                           </tr>
                         </thead>
                         <tbody>
-                          {row}
+                          {row.length > 0 ? row : (
+                            <tr><td colSpan="8" style={{textAlign: "center", color: "#888"}}>No lands listed yet.</td></tr>
+                          )}
                         </tbody>
                       </Table>
                     </CardBody>

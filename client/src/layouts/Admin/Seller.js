@@ -83,7 +83,7 @@ function Seller(props) {
         return routes[i].name;
       }
     }
-    return "Brand";
+    return "Land Registry";
   };
   return (
     <BackgroundColorContext.Consumer>

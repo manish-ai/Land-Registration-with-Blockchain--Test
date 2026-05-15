@@ -3,7 +3,7 @@ import Land from "../artifacts/Land.json"
 import getWeb3 from "../getWeb3"
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from 'drizzle-react';
+import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import {Spinner} from 'react-bootstrap'
 
 // reactstrap components
@@ -33,7 +33,7 @@ import {
     AccountData,
     ContractData,
     ContractForm
-} from 'drizzle-react-components'
+} from '../drizzle-shims/drizzle-react-components'
 
 const drizzleOptions = {
     contracts: [Land]
@@ -73,12 +73,6 @@ class ApproveRequest extends Component {
     }
 
     componentDidMount = async () => {
-        //For refreshing page only once
-        if(!window.location.hash){
-            window.location = window.location + '#loaded';
-            window.location.reload();
-        }
-
         try{
             //Get network provider and web3 instance
             const web3 = await getWeb3();
@@ -94,7 +88,7 @@ class ApproveRequest extends Component {
 
             this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
             
-            const currentAddress = await web3.currentProvider.selectedAddress;
+            const currentAddress = accounts[0];
             console.log(currentAddress);
             
             var requestsCount = await this.state.LandInstance.methods.getRequestsCount().call();

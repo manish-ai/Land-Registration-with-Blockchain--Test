@@ -50,12 +50,6 @@ class AddLand extends Component {
   }
 
   componentDidMount = async () => {
-    //For refreshing page only once
-    if (!window.location.hash) {
-      window.location = window.location + '#loaded';
-      window.location.reload();
-    }
-
     try {
       //Get network provider and web3 instance
       const web3 = await getWeb3();
@@ -70,7 +64,7 @@ class AddLand extends Component {
       );
 
       this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      const currentAddress = await web3.currentProvider.selectedAddress;
+      const currentAddress = accounts[0];
       console.log(currentAddress);
       this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
       var verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
