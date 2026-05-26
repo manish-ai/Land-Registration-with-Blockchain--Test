@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import classNames from "classnames";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
@@ -13,6 +14,7 @@ import {
   ContractForm
 } from '../drizzle-shims/drizzle-react-components'
 import "../index.css";
+import * as govApi from '../services/govApi';
 // reactstrap components
 import {
   Button,
@@ -34,8 +36,6 @@ const drizzleOptions = {
 }
 
 
-var row = [];
-var landOwner = [];
 
 class Dashboard extends Component {
   constructor(props) {
@@ -47,28 +47,56 @@ class Dashboard extends Component {
       web3: null,
       count: 0,
       requested: false,
+      ethRate: 0.0000057,
+      ethRateLoaded: false,
+      bankReceipt: null,
+      row: [],
     }
   }
 
 
-  makePayment = (seller_address, amount, land_id) => async () => {
-    // alert(amount);
+  makePayment = (seller_address, landPID, amount, reqId) => async () => {
+    // Resolve Aadhar numbers via verificationId stored on-chain (Bug 2 fix)
+    const buyerDetails = await this.state.LandInstance.methods.getBuyerDetails(this.state.account).call();
+    const sellerDetails = await this.state.LandInstance.methods.getSellerDetails(seller_address).call();
+    const buyerVerifId = buyerDetails[4];
+    const sellerVerifId = sellerDetails[3];
 
-    amount = amount*0.0000057;
-    alert(amount);
+    const buyerAadharRes = await govApi.getAadharByVerificationId(buyerVerifId);
+    const sellerAadharRes = await govApi.getAadharByVerificationId(sellerVerifId);
+
+    if (!buyerAadharRes.found || !sellerAadharRes.found) {
+      alert('Could not resolve Aadhar numbers for bank transfer. Proceeding without bank validation.');
+    } else {
+      // Process bank transfer with real Aadhar numbers (Bug 2 fix)
+      const bankResult = await govApi.processPayment(
+        buyerAadharRes.aadharNumber,
+        sellerAadharRes.aadharNumber,
+        amount,
+        landPID
+      );
+      if (!bankResult.success) {
+        // Bug 3 fix: show error if bank payment fails
+        alert('Bank transfer failed: ' + (bankResult.message || 'Unknown error'));
+        return;
+      }
+      this.setState({ bankReceipt: bankResult.transactionId || bankResult.txnId || 'N/A' });
+    }
+
+    // Bug 15 fix: use nominal 0.001 ETH on-chain instead of full INR-converted amount
+    const nominalEth = '0.001';
     await this.state.LandInstance.methods.payment(
       seller_address,
-      land_id
+      reqId
     ).send({
       from: this.state.account,
-      value: this.state.web3.utils.toWei(amount.toString(), "ether"),
+      value: this.state.web3.utils.toWei(nominalEth, "ether"),
       gas: 2100000
-    }).then(response => {
-      this.props.history.push("#");
+    }).then(() => {
+      const receipt = this.state.bankReceipt;
+      alert('Payment complete!' + (receipt ? ' Bank TXN ID: ' + receipt : ''));
+      window.location.reload(false);
     });
-    //Reload
-    window.location.reload(false);
-
   }
 
   componentDidMount = async () => {
@@ -88,40 +116,49 @@ class Dashboard extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-      const currentAddress = accounts[0];
-      console.log(currentAddress);
-      var registered = await this.state.LandInstance.methods.isBuyer(currentAddress).call();
-      console.log(registered);
-      this.setState({ registered: registered });
-      var count = await this.state.LandInstance.methods.getLandsCount().call();
-      count = parseInt(count);
-      console.log(typeof (count));
-      console.log(count);
-
-
-
-      var dict = {}
-      for (var i = 1; i < count + 1; i++) {
-        var address = await this.state.LandInstance.methods.getLandOwner(i).call();
-        dict[i] = address;
+      // Fetch ETH rate from gov API
+      const rateResult = await govApi.getEthRate();
+      var ethRate = 0.0000057; // fallback
+      if (rateResult.rate) {
+        ethRate = 1 / rateResult.rate; // rate is ETH_INR, we need INR_to_ETH
+        this.setState({ ethRate: ethRate, ethRateLoaded: true });
+      } else {
+        this.setState({ ethRate: ethRate });
       }
 
-      for (var i = 0; i < count; i++) {
-        var paid = await this.state.LandInstance.methods.isPaid(i + 1).call();
-        var price = await this.state.LandInstance.methods.getPrice(i + 1).call();
-        row.push(<tr><td>{i + 1}</td><td>{dict[i + 1]}</td><td>{price}</td>
+      const currentAddress = getWalletAddress();
+      console.log(currentAddress);
+      var registered = await instance.methods.isBuyer(currentAddress).call();
+      console.log(registered);
+      this.setState({ registered: registered });
+
+      var requestsCount = await instance.methods.getRequestsCount().call();
+      requestsCount = parseInt(requestsCount);
+
+      const rowItems = [];
+      for (let i = 1; i <= requestsCount; i++) {
+        var request = await instance.methods.getRequestDetails(i).call();
+        // request: [sellerId, buyerId, landId, requestStatus]
+        if (request[1].toLowerCase() !== currentAddress.toLowerCase()) continue;
+        if (!request[3]) continue; // not approved yet
+
+        var paid = await instance.methods.isPaid(i).call();
+        var price = await instance.methods.getPrice(request[2]).call();
+        var landPID = await instance.methods.getPID(request[2]).call();
+        var ethAmount = (price * ethRate).toFixed(8);
+        rowItems.push(<tr key={i}><td>{i}</td><td>{request[0]}</td><td>{price} (ETH: {ethAmount})</td>
           <td>
-            <Button onClick={this.makePayment(dict[i + 1], price, i+1)} 
+            <Button onClick={this.makePayment(request[0], landPID, price, i)}
             disabled={paid} className="btn btn-success">
-              Make Payment
+              {paid ? 'Paid' : 'Make Payment'}
             </Button>
           </td>
         </tr>)
 
       }
-      console.log(row);
+      this.setState({ row: rowItems });
 
 
 
@@ -181,7 +218,7 @@ class Dashboard extends Component {
                 <Col lg="12" md="12">
                   <Card>
                     <CardHeader>
-                      <CardTitle tag="h4">Payment for Lands<span className="duration">₹ 1 = 0.0000057 Ether</span></CardTitle>
+                      <CardTitle tag="h4">Payment for Lands<span className="duration">₹ 1 = {this.state.ethRate.toFixed(10)} Ether {this.state.ethRateLoaded ? '(live)' : '(fallback)'}</span></CardTitle>
 
                     </CardHeader>
                     <CardBody>
@@ -195,7 +232,7 @@ class Dashboard extends Component {
                           </tr>
                         </thead>
                         <tbody>
-                          {row}
+                          {this.state.row}
                         </tbody>
                       </Table>
                     </CardBody>

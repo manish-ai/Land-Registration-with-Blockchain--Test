@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
 import Land from "../artifacts/Land.json"
 import getWeb3 from "../getWeb3"
+import { getWalletAddress } from '../services/authService'
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
@@ -39,8 +40,6 @@ const drizzleOptions = {
     contracts: [Land]
 }
 
-var requestTable = [];
-
 class ApproveRequest extends Component {
     constructor(props){
         super(props)
@@ -51,6 +50,7 @@ class ApproveRequest extends Component {
             web3: null,
             approved: '',
             verified: '',
+            requestTable: [],
         }
     }
     landTransfer = (landId, newOwner) => async () => {
@@ -86,34 +86,33 @@ class ApproveRequest extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
             
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             console.log(currentAddress);
             
-            var requestsCount = await this.state.LandInstance.methods.getRequestsCount().call();
+            var requestsCount = await instance.methods.getRequestsCount().call();
             console.log(requestsCount);
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
+            var verified = await instance.methods.isLandInspector(currentAddress).call();
             //console.log(verified);
             this.setState({ verified: verified });
             // var requestsMap = [];
-            // requestsMap = await this.state.LandInstance.methods.getAllRequests().call();
+            // requestsMap = await instance.methods.getAllRequests().call();
 
+            const requestTable = [];
             for(let i = 1; i<requestsCount+1; i++){
-                var request = await this.state.LandInstance.methods.getRequestDetails(i).call();
+                var request = await instance.methods.getRequestDetails(i).call();
                 console.log(request);
-                // console.log(request[0].toLowerCase());
-                // console.log(currentAddress);
-                var isPaid = await this.state.LandInstance.methods.isPaid(request[2]).call();
+                var isPaid = await instance.methods.isPaid(i).call();
                 console.log(isPaid);
-                requestTable.push(<tr><td>{i}</td><td>{request[0]}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
+                requestTable.push(<tr key={i}><td>{i}</td><td>{request[0]}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
                 <td>
                     <Button onClick={this.landTransfer(i, request[1])} disabled={!isPaid} className="button-vote">
                         Approve Land Transfer
                 </Button>
                 </td></tr>)
-                // console.log(request[1]);
             }
+            this.setState({ requestTable });
 
         }catch (error) {
             // Catch any errors for any of the above operations.
@@ -173,7 +172,7 @@ class ApproveRequest extends Component {
                             </tr>
                         </thead> 
                         <tbody>
-                            {requestTable}
+                            {this.state.requestTable}
                         </tbody> 
                     </Table>
                 </CardBody>

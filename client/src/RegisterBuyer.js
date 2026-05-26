@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import LandContract from "./artifacts/Land.json";
 import getWeb3 from "./getWeb3";
-import ipfs from './ipfs';
+import fileUpload from './ipfs';
+import * as govApi from './services/govApi';
 
 import { FormGroup, FormControl, Button, Spinner, FormFile } from 'react-bootstrap'
 
@@ -21,9 +22,14 @@ class RegisterBuyer extends Component {
             email: '',
             aadharNumber: '',
             panNumber: '',
-            isVerified: false,
+            aadharVerified: false,
+            panVerified: false,
+            verificationId: '',
+            govData: null,
+            aadharResult: null,
+            panResult: null,
             buffer2: null,
-            document: '',
+            documentHash: '',
         }
         this.captureDoc = this.captureDoc.bind(this);
         this.addDoc = this.addDoc.bind(this);
@@ -43,7 +49,8 @@ class RegisterBuyer extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            // Use accounts[1] for buyer — accounts[0] is already used for seller registration
+            this.setState({ LandInstance: instance, web3: web3, account: accounts[2] });
 
 
         } catch (error) {
@@ -54,34 +61,53 @@ class RegisterBuyer extends Component {
             console.error(error);
         }
     };
+    verifyAadhar = async () => {
+        if (!this.state.aadharNumber || !this.state.name) {
+            alert("Please enter both Name and Aadhar Number first.");
+            return;
+        }
+        const result = await govApi.verifyAadhar(this.state.aadharNumber, this.state.name);
+        this.setState({ aadharResult: result, aadharVerified: result.verified || false });
+        if (result.verified && result.verificationId) {
+            this.setState({ verificationId: result.verificationId, govData: result });
+        }
+    }
+
+    verifyPAN = async () => {
+        if (!this.state.panNumber || !this.state.name) {
+            alert("Please enter both Name and PAN Number first.");
+            return;
+        }
+        const result = await govApi.verifyPAN(this.state.panNumber, this.state.name);
+        this.setState({ panResult: result, panVerified: result.verified || false });
+    }
+
     addDoc = async () => {
-        // alert('In add image')
-        await ipfs.files.add(this.state.buffer2, (error, result) => {
-          if (error) {
-            alert(error)
-            return
-          }
-    
-        //   alert(result[0].hash)
-          this.setState({ document: result[0].hash });
-          console.log('document:', this.state.document);
-        })
+        if (!this.state.buffer2) {
+          console.log('No document selected, skipping upload');
+          this.setState({ documentHash: '' });
+          return;
+        }
+        try {
+          const result = await fileUpload.upload(this.state.buffer2);
+          this.setState({ documentHash: result.fileId || '' });
+          console.log('documentHash:', result.fileId);
+        } catch (e) {
+          console.error('File upload failed:', e.message);
+          this.setState({ documentHash: '' });
+        }
       }
 
     RegisterBuyer = async () => {
-        this.addDoc();
-        // alert('After add image')
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await this.addDoc();
         var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
 
-        if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.aadharNumber == '' || this.state.panNumber == '') {
+        if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.email == '') {
             alert("All the fields are compulsory!");
-        } else if(!Number(this.state.aadharNumber) || this.state.aadharNumber.length != 12 ){
-            alert("Aadhar Number should be 12 digits long!");
-        } else if(this.state.panNumber.length != 10){
-            alert("Pan Number should be a 10 digit unique number!");
+        } else if (!this.state.aadharVerified || !this.state.panVerified) {
+            alert("Please complete Aadhar and PAN verification first!");
         } else if (!Number(this.state.age) || this.state.age < 18) {
-            alert("Your age must be a number");
+            alert("Your age must be a number and at least 18");
         } else if(this.state.email == '' || !pattern.test(this.state.email)){
             alert('Please enter a valid email address\n');
         }
@@ -90,21 +116,17 @@ class RegisterBuyer extends Component {
                 this.state.name,
                 this.state.age,
                 this.state.city,
-                this.state.aadharNumber,
-                this.state.panNumber,
-                this.state.document,
                 this.state.email,
+                this.state.verificationId,
+                this.state.documentHash,
                 )
 
                 .send({
                     from : this.state.account,
                     gas : 2100000
                 }).then(response => {
-                    this.props.history.push("/admin/dashboard");
+                    window.location.href = "/buyer/dashboard";
                 });
-
-            //Reload
-            window.location.reload(false);
         }
     }
 
@@ -252,11 +274,19 @@ class RegisterBuyer extends Component {
                                             onChange={this.updateAadhar}
                                         />
                                     </div>
+                                    <Button onClick={this.verifyAadhar} className="button-vote" style={{marginTop: '5px'}}>
+                                        Verify with UIDAI
+                                    </Button>
+                                    {this.state.aadharResult && (
+                                        <span style={{marginLeft: '10px', color: this.state.aadharVerified ? 'green' : 'red', fontWeight: 'bold'}}>
+                                            {this.state.aadharVerified ? 'Verified' : ('Failed: ' + (this.state.aadharResult.reason || 'Not verified'))}
+                                        </span>
+                                    )}
                                 </FormGroup>
 
                                 <FormGroup>
                                     <div className="form-label">
-                                        Enter Pan no --
+                                        Enter PAN No --
                       </div>
                                     <div className="form-input">
                                         <FormControl
@@ -265,18 +295,26 @@ class RegisterBuyer extends Component {
                                             onChange={this.updatePan}
                                         />
                                     </div>
+                                    <Button onClick={this.verifyPAN} className="button-vote" style={{marginTop: '5px'}}>
+                                        Verify with Income Tax
+                                    </Button>
+                                    {this.state.panResult && (
+                                        <span style={{marginLeft: '10px', color: this.state.panVerified ? 'green' : 'red', fontWeight: 'bold'}}>
+                                            {this.state.panVerified ? 'Verified' : ('Failed: ' + (this.state.panResult.reason || 'Not verified'))}
+                                        </span>
+                                    )}
                                 </FormGroup>
 
                                 <FormGroup>
-                                    <label>Add your Aadhar Card (PDF Format)</label>
+                                    <label>Upload Identity Document (PDF Format)</label>
                                     <FormFile
                                         id="File2"
                                         onChange={this.captureDoc}
                                     />
                                 </FormGroup>
 
-                                <Button onClick={this.RegisterBuyer} className="button-vote">
-                                    Register as Buyer
+                                <Button onClick={this.RegisterBuyer} disabled={!this.state.aadharVerified || !this.state.panVerified} className="button-vote">
+                                    Register on Blockchain
                   </Button>
                             </div>
 

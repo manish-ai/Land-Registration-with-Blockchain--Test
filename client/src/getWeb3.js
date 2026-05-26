@@ -14,7 +14,9 @@ const getWeb3 = () =>
       try {
         let web3;
         // Modern dapp browsers (MetaMask etc.)
-        if (window.ethereum) {
+        // Only use MetaMask if it has already approved an account for this site.
+        // Otherwise fall through to direct Ganache HTTP provider.
+        if (window.ethereum && window.ethereum.selectedAddress) {
           web3 = new Web3(window.ethereum);
           // Use the modern API if available, fall back to legacy enable()
           if (window.ethereum.request) {
@@ -23,16 +25,11 @@ const getWeb3 = () =>
             await window.ethereum.enable();
           }
         }
-        // Legacy dapp browsers
-        else if (window.web3) {
-          web3 = window.web3;
-          console.log("Injected web3 detected.");
-        }
-        // Fallback to localhost Ganache
+        // Fallback to localhost Ganache (also used when MetaMask is not connected to this site)
         else {
           const provider = new Web3.providers.HttpProvider("http://127.0.0.1:7545");
           web3 = new Web3(provider);
-          console.log("No web3 instance injected, using Local web3.");
+          console.log("No connected wallet - using local Ganache provider.");
         }
         cachedWeb3 = web3;
         resolve(web3);

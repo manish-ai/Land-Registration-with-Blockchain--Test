@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -34,10 +35,6 @@ const drizzleOptions = {
 }
 
 
-var sellersCount;
-var sellersMap = [];
-var sellerTable = [];
-
 class SellerInfo extends Component {
     constructor(props) {
         super(props)
@@ -49,6 +46,7 @@ class SellerInfo extends Component {
             sellers: 0,
             verified: '',
             not_verified: '',
+            sellerTable: [],
         }
     }
 
@@ -87,7 +85,7 @@ class SellerInfo extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -96,35 +94,29 @@ class SellerInfo extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
 
-            sellersCount = await this.state.LandInstance.methods.getSellersCount().call();
+            const sellersCount = await instance.methods.getSellersCount().call();
             console.log(sellersCount);
 
-            
-            
-            sellersMap = await this.state.LandInstance.methods.getSeller().call();
-            
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
-            //console.log(verified);
+            const sellersMap = await instance.methods.getSeller().call();
+
+            var verified = await instance.methods.isLandInspector(currentAddress).call();
             this.setState({ verified: verified });
 
-
+            const sellerTable = [];
             for (let i = 0; i < sellersCount; i++) {
-                var seller = await this.state.LandInstance.methods.getSellerDetails(sellersMap[i]).call();
+                var seller = await instance.methods.getSellerDetails(sellersMap[i]).call();
                 console.log(seller);
-                var seller_verify = await this.state.LandInstance.methods.isVerified(sellersMap[i]).call();
+                var seller_verify = await instance.methods.isVerified(sellersMap[i]).call();
                 console.log(seller_verify);
                 seller.verified = seller_verify;
-                
-                //seller.push(seller_verify);
-                var not_verify = await this.state.LandInstance.methods.isRejected(sellersMap[i]).call();
+
+                var not_verify = await instance.methods.isRejected(sellersMap[i]).call();
                 console.log(not_verify);
 
-
-
-                sellerTable.push(<tr><td>{i + 1}</td><td>{sellersMap[i]}</td><td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td><td>{seller[4]}</td><td><a href={`https://ipfs.io/ipfs/${seller[5]}`} target="_blank">Click Here</a></td>
+                sellerTable.push(<tr key={i}><td>{i + 1}</td><td>{sellersMap[i]}</td><td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td><td><a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank">Click Here</a></td>
                     <td>{seller.verified.toString()}</td>
                     <td>
                         <Button onClick={this.verifySeller(sellersMap[i])} disabled={seller_verify || not_verify} className="button-vote">
@@ -136,11 +128,9 @@ class SellerInfo extends Component {
                         Reject
                     </Button>
                     </td></tr>)
-            console.log(seller[5]);
-
 
             }
-            this.setState({ sellers: sellerTable.length });
+            this.setState({ sellers: sellerTable.length, sellerTable });
 
 
         } catch (error) {
@@ -207,18 +197,17 @@ class SellerInfo extends Component {
                                                     <th>Account Address</th>
                                                     <th>Name</th>
                                                     <th>Age</th>
-                                                    <th>Aadhar Number</th>
-                                                    <th>Pan Number</th>
                                                     <th>Owned Lands</th>
-                                                    <th>Aadhar Card Document</th>
+                                                    <th>Verification ID</th>
+                                                    <th>Document</th>
                                                     <th>Verification Status</th>
                                                     <th>Verify Seller</th>
                                                     <th>Reject Seller</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {sellerTable.length > 0 ? sellerTable : (
-                                                    <tr><td colSpan="11" style={{textAlign: "center", color: "#888"}}>No sellers registered yet.</td></tr>
+                                                {this.state.sellerTable.length > 0 ? this.state.sellerTable : (
+                                                    <tr><td colSpan="10" style={{textAlign: "center", color: "#888"}}>No sellers registered yet.</td></tr>
                                                 )}
                                             </tbody>
 

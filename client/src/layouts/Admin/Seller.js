@@ -1,14 +1,13 @@
 
 import React from "react";
-import { Route, Switch, Redirect, useLocation } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { isLoggedIn, getRole, logout, getName } from "../../services/authService";
 // javascript plugin used to create scrollbars on windows
 import PerfectScrollbar from "perfect-scrollbar";
 
 // core components
 import AdminNavbar from "../../components/Navbars/AdminNavbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
-import FixedPlugin from "../../components/FixedPlugin/FixedPlugin";
-import SDash from  "../../views/SellerDashboard";
 import routes from "../../routeseller";
 import Footer from "../../components/Footer/Footer";
 import logo from "../../assets/img/react-logo.png";
@@ -16,7 +15,7 @@ import { BackgroundColorContext } from "../../contexts/BackgroundColorContext";
 
 var ps;
 
-function Seller(props) {
+function Seller() {
   const location = useLocation();
   const mainPanelRef = React.useRef(null);
   const [sidebarOpened, setsidebarOpened] = React.useState(
@@ -63,11 +62,12 @@ function Seller(props) {
   };
   const getRoutes = (routes) => {
     return routes.map((prop, key) => {
-      if (prop.layout === "/Seller") {
+      if (prop.layout === "/seller") {
+        const C = prop.component;
         return (
           <Route
-            path={prop.layout + prop.path}
-            component={prop.component}
+            path={prop.path}
+            element={<C />}
             key={key}
           />
         );
@@ -85,6 +85,12 @@ function Seller(props) {
     }
     return "Land Registry";
   };
+
+  if (!isLoggedIn() || getRole() !== 'seller') {
+    window.location.href = '/';
+    return null;
+  }
+
   return (
     <BackgroundColorContext.Consumer>
       {({ color, changeColor }) => (
@@ -104,11 +110,13 @@ function Seller(props) {
                 brandText={getBrandText(location.pathname)}
                 toggleSidebar={toggleSidebar}
                 sidebarOpened={sidebarOpened}
+                userName={getName()}
+                onLogout={logout}
               />
-              <Switch>
+              <Routes>
                 {getRoutes(routes)}
-                <Redirect from="*" to="/Seller/SellerDashboard" />
-              </Switch>
+                <Route path="*" element={<Navigate to="/seller/dashboard" replace />} />
+              </Routes>
               <Footer fluid />
 
             </div>

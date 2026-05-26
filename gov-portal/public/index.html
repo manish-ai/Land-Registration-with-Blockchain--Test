@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government of India - Digital Land Registry Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0c2340;
+            --navy-light: #1a3a5c;
+            --gold: #c9a227;
+            --gold-light: #e6c65a;
+        }
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            color: white;
+            padding: 1rem 0;
+            border-bottom: 3px solid var(--gold);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--gold-light);
+            margin: 0;
+        }
+        .emblem {
+            font-size: 2rem;
+            margin-right: 12px;
+        }
+        .nav-tabs {
+            background: white;
+            border-bottom: 2px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            transition: all 0.2s;
+        }
+        .nav-tabs .nav-link:hover {
+            color: var(--navy);
+            background: #f8f9fa;
+        }
+        .nav-tabs .nav-link.active {
+            color: var(--navy);
+            border-bottom: 3px solid var(--navy);
+            font-weight: 600;
+            background: transparent;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+            border-left: 4px solid var(--navy);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .stat-card .stat-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .stat-icon {
+            font-size: 2.5rem;
+            color: var(--gold);
+            opacity: 0.7;
+        }
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .table-container .table {
+            margin: 0;
+        }
+        .table thead th {
+            background: var(--navy);
+            color: white;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 0.75rem 1rem;
+            white-space: nowrap;
+        }
+        .table tbody td {
+            padding: 0.65rem 1rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .badge-verified { background: #198754; }
+        .badge-flagged { background: #dc3545; }
+        .badge-encumbered { background: #fd7e14; }
+        .badge-litigation { background: #dc3545; }
+        .badge-onchain { background: #0d6efd; }
+        .badge-active { background: #198754; }
+        .badge-inactive { background: #6c757d; }
+        .badge-success { background: #198754; }
+        .badge-failed { background: #dc3545; }
+        .badge-pending { background: #fd7e14; }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .toolbar h5 {
+            margin: 0;
+            font-weight: 600;
+            color: var(--navy);
+        }
+        .search-box {
+            max-width: 300px;
+        }
+        .btn-navy {
+            background: var(--navy);
+            color: white;
+            border: none;
+        }
+        .btn-navy:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+        .btn-gold {
+            background: var(--gold);
+            color: var(--navy);
+            border: none;
+            font-weight: 600;
+        }
+        .btn-gold:hover {
+            background: var(--gold-light);
+            color: var(--navy);
+        }
+        .modal-header {
+            background: var(--navy);
+            color: white;
+        }
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        .activity-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .content-area {
+            padding: 1.5rem 0;
+        }
+        .tab-content {
+            padding-top: 0;
+        }
+        .reset-btn {
+            background: #dc3545;
+            border: none;
+        }
+        .reset-btn:hover {
+            background: #bb2d3b;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .form-check-input:checked {
+            background-color: var(--navy);
+            border-color: var(--navy);
+        }
+        .amount {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Header -->
+<div class="header">
+    <div class="container-fluid px-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <span class="emblem">&#9765;</span>
+                <div>
+                    <h1>Government of India - Digital Land Registry Portal</h1>
+                    <p class="subtitle">Ministry of Land Resources | Administrative Dashboard</p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>System Online</span>
+                <button class="btn btn-sm reset-btn text-white" onclick="confirmReset()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Reset Demo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs px-4" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="citizens-tab" data-bs-toggle="tab" data-bs-target="#citizens" type="button" role="tab">
+            <i class="bi bi-people me-1"></i>Citizens
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="land-tab" data-bs-toggle="tab" data-bs-target="#land" type="button" role="tab">
+            <i class="bi bi-geo-alt me-1"></i>Land Records
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab">
+            <i class="bi bi-bank me-1"></i>Bank Accounts
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+            <i class="bi bi-receipt me-1"></i>Transactions
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="verifications-tab" data-bs-toggle="tab" data-bs-target="#verifications" type="button" role="tab">
+            <i class="bi bi-shield-check me-1"></i>Verifications
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="container-fluid px-4 content-area">
+    <div class="tab-content" id="mainTabContent">
+
+        <!-- Dashboard Tab -->
+        <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+            <div class="row g-3 mt-1" id="statsCards">
+                <div class="col-md col-sm-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-number" id="statCitizens">-</div>
+                                <div class="stat-label">Citizens</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md col-sm-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-number" id="statLand">-</div>
+                                <div class="stat-label">Land Records</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md col-sm-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-number" id="statBank">-</div>
+                                <div class="stat-label">Bank Accounts</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-bank2"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md col-sm-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-number" id="statTransactions">-</div>
+                                <div class="stat-label">Transactions</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md col-sm-6">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-number" id="statVerifications">-</div>
+                                <div class="stat-label">Verifications</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-shield-fill-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="table-container">
+                        <div class="toolbar">
+                            <h5><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Details</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityBody">
+                                    <tr><td colspan="4" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Citizens Tab -->
+        <div class="tab-pane fade" id="citizens" role="tabpanel">
+            <div class="table-container mt-3">
+                <div class="toolbar">
+                    <h5><i class="bi bi-people me-2"></i>Citizens Registry</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm search-box" placeholder="Search citizens..." id="citizenSearch" oninput="filterCitizens()">
+                        <button class="btn btn-sm btn-navy" onclick="openCitizenModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Add Citizen
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Aadhar</th>
+                                <th>PAN</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>City</th>
+                                <th>State</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citizensBody">
+                            <tr><td colspan="11" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Land Records Tab -->
+        <div class="tab-pane fade" id="land" role="tabpanel">
+            <div class="table-container mt-3">
+                <div class="toolbar">
+                    <h5><i class="bi bi-geo-alt me-2"></i>Land Records</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm search-box" placeholder="Search land records..." id="landSearch" oninput="filterLand()">
+                        <button class="btn btn-sm btn-navy" onclick="openLandModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Add Record
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Property PID</th>
+                                <th>Survey No.</th>
+                                <th>Area (sqm)</th>
+                                <th>City</th>
+                                <th>Owner</th>
+                                <th>Market Value</th>
+                                <th>Type</th>
+                                <th>Flags</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="landBody">
+                            <tr><td colspan="10" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Accounts Tab -->
+        <div class="tab-pane fade" id="bank" role="tabpanel">
+            <div class="table-container mt-3">
+                <div class="toolbar">
+                    <h5><i class="bi bi-bank me-2"></i>Bank Accounts</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm search-box" placeholder="Search accounts..." id="bankSearch" oninput="filterBank()">
+                        <button class="btn btn-sm btn-navy" onclick="openBankModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Add Account
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Account No.</th>
+                                <th>IFSC</th>
+                                <th>Bank</th>
+                                <th>Holder</th>
+                                <th>Aadhar Linked</th>
+                                <th>PAN Linked</th>
+                                <th>Balance</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bankBody">
+                            <tr><td colspan="11" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel">
+            <div class="table-container mt-3">
+                <div class="toolbar">
+                    <h5><i class="bi bi-receipt me-2"></i>Transaction Log <span class="badge bg-secondary ms-2">Read-Only</span></h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadTransactions()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Transaction ID</th>
+                                <th>Buyer Aadhar</th>
+                                <th>Seller Aadhar</th>
+                                <th>Land PID</th>
+                                <th>Amount</th>
+                                <th>Buyer Acct</th>
+                                <th>Seller Acct</th>
+                                <th>Status</th>
+                                <th>Blockchain Tx</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody">
+                            <tr><td colspan="11" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verifications Tab -->
+        <div class="tab-pane fade" id="verifications" role="tabpanel">
+            <div class="table-container mt-3">
+                <div class="toolbar">
+                    <h5><i class="bi bi-shield-check me-2"></i>Verification Log <span class="badge bg-secondary ms-2">Read-Only</span></h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadVerifications()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Verification ID</th>
+                                <th>Aadhar</th>
+                                <th>Type</th>
+                                <th>Result</th>
+                                <th>Details</th>
+                                <th>Requested By</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verificationsBody">
+                            <tr><td colspan="8" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Citizen Modal -->
+<div class="modal fade" id="citizenModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="citizenModalTitle">Add Citizen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="citizenForm">
+                    <input type="hidden" id="citizenId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Aadhar Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="citizenAadhar" required maxlength="12" placeholder="12-digit Aadhar">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">PAN Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="citizenPan" required maxlength="10" placeholder="e.g., ABCDE1234F">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="citizenName" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Age <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="citizenAge" required min="1" max="150">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Gender</label>
+                            <select class="form-select" id="citizenGender">
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" class="form-control" id="citizenDob">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="citizenPhone" placeholder="+91-XXXXXXXXXX">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="citizenEmail">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-control" id="citizenAddress">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" id="citizenCity">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" id="citizenState">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Photo URL</label>
+                            <input type="text" class="form-control" id="citizenPhoto">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="citizenVerified" checked>
+                                <label class="form-check-label" for="citizenVerified">Verified Citizen</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-navy" onclick="saveCitizen()">Save Citizen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Land Record Modal -->
+<div class="modal fade" id="landModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="landModalTitle">Add Land Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="landForm">
+                    <input type="hidden" id="landId">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Property PID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landPid" required placeholder="e.g., KA-BLR-2024-001">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Survey Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landSurvey" required placeholder="e.g., SY-145/A">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Area (sqm) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="landArea" required min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landCity" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landState" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">District</label>
+                            <input type="text" class="form-control" id="landDistrict">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Taluk</label>
+                            <input type="text" class="form-control" id="landTaluk">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Village</label>
+                            <input type="text" class="form-control" id="landVillage">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Land Type</label>
+                            <select class="form-select" id="landType">
+                                <option value="">Select</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Agricultural">Agricultural</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Owner Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landOwnerName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Owner Aadhar <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="landOwnerAadhar" required maxlength="12">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Market Value (INR) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="landValue" required min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Registration Date</label>
+                            <input type="date" class="form-control" id="landRegDate">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" class="form-control" id="landLat" step="any">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" class="form-control" id="landLng" step="any">
+                        </div>
+                        <div class="col-md-12 d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="landEncumbrance">
+                                <label class="form-check-label" for="landEncumbrance">Has Encumbrance</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="landLitigation">
+                                <label class="form-check-label" for="landLitigation">Has Litigation</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="landOnChain">
+                                <label class="form-check-label" for="landOnChain">Registered On-Chain</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-navy" onclick="saveLand()">Save Record</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bank Account Modal -->
+<div class="modal fade" id="bankModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bankModalTitle">Add Bank Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bankForm">
+                    <input type="hidden" id="bankId">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Account Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankAccount" required placeholder="e.g., SBI-1001-2024">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">IFSC Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankIfsc" required placeholder="e.g., SBIN0001234">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Bank Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Holder Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankHolder" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Aadhar Linked <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankAadhar" required maxlength="12">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">PAN Linked <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bankPan" required maxlength="10">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Balance (INR) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="bankBalance" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Account Type</label>
+                            <select class="form-select" id="bankType">
+                                <option value="Savings">Savings</option>
+                                <option value="Current">Current</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Branch</label>
+                            <input type="text" class="form-control" id="bankBranch">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="bankActive" checked>
+                                <label class="form-check-label" for="bankActive">Active Account</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-navy" onclick="saveBank()">Save Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Reset Modal -->
+<div class="modal fade" id="resetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Reset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1)"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">This will:</p>
+                <ul class="mt-2">
+                    <li>Clear all on-chain registration flags</li>
+                    <li>Delete all transaction records</li>
+                    <li>Delete all verification logs</li>
+                    <li>Reset all bank balances to original values</li>
+                </ul>
+                <p class="fw-bold text-danger mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="performReset()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Reset Demo Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ==================== CONFIG ====================
+const API = '/api/admin';
+
+// ==================== STATE ====================
+let allCitizens = [];
+let allLandRecords = [];
+let allBankAccounts = [];
+
+// ==================== UTILITY ====================
+function formatINR(amount) {
+    if (amount === null || amount === undefined) return '-';
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function showToast(message, type) {
+    type = type || 'success';
+    const container = document.getElementById('toastContainer');
+    const colors = { success: 'bg-success', error: 'bg-danger', warning: 'bg-warning text-dark', info: 'bg-info' };
+    const icons = { success: 'bi-check-circle', error: 'bi-x-circle', warning: 'bi-exclamation-triangle', info: 'bi-info-circle' };
+    const id = 'toast-' + Date.now();
+    const html = '<div id="' + id + '" class="toast align-items-center text-white ' + (colors[type] || colors.success) + ' border-0 show" role="alert">' +
+        '<div class="d-flex">' +
+        '<div class="toast-body"><i class="bi ' + (icons[type] || icons.success) + ' me-2"></i>' + escapeHtml(message) + '</div>' +
+        '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+        '</div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+    setTimeout(function() {
+        var el = document.getElementById(id);
+        if (el) el.remove();
+    }, 4000);
+}
+
+async function apiCall(endpoint, options) {
+    try {
+        const res = await fetch(API + endpoint, options);
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || 'Request failed');
+        }
+        return data;
+    } catch (err) {
+        showToast(err.message, 'error');
+        throw err;
+    }
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard() {
+    try {
+        const stats = await apiCall('/stats');
+        document.getElementById('statCitizens').textContent = stats.totalCitizens;
+        document.getElementById('statLand').textContent = stats.totalLandRecords;
+        document.getElementById('statBank').textContent = stats.totalBankAccounts;
+        document.getElementById('statTransactions').textContent = stats.totalTransactions;
+        document.getElementById('statVerifications').textContent = stats.totalVerifications;
+
+        const tbody = document.getElementById('activityBody');
+        if (!stats.recentActivity || stats.recentActivity.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No recent activity. Run the DApp to generate transactions and verifications.</td></tr>';
+            return;
+        }
+
+        let rows = '';
+        stats.recentActivity.forEach(function(item) {
+            var typeBadge, details, resultBadge;
+            if (item.type === 'verification') {
+                typeBadge = '<span class="badge bg-info">Verification</span>';
+                details = escapeHtml(item.verification_type) + ' check for Aadhar: ' + escapeHtml(item.aadhar_number);
+                resultBadge = item.result === 'VERIFIED'
+                    ? '<span class="badge badge-verified">VERIFIED</span>'
+                    : '<span class="badge badge-flagged">REJECTED</span>';
+            } else {
+                typeBadge = '<span class="badge bg-primary">Transaction</span>';
+                details = 'Buyer: ' + escapeHtml(item.buyer_aadhar) + ' | Seller: ' + escapeHtml(item.seller_aadhar) + ' | ' + formatINR(item.amount);
+                var statusClass = item.status === 'SUCCESS' ? 'badge-success' : item.status === 'FAILED' ? 'badge-failed' : 'badge-pending';
+                resultBadge = '<span class="badge ' + statusClass + '">' + escapeHtml(item.status) + '</span>';
+            }
+            rows += '<tr><td>' + formatDate(item.created_at) + '</td><td>' + typeBadge + '</td><td>' + details + '</td><td>' + resultBadge + '</td></tr>';
+        });
+        tbody.innerHTML = rows;
+    } catch (err) {
+        // Error already shown via toast
+    }
+}
+
+// ==================== CITIZENS ====================
+async function loadCitizens() {
+    try {
+        allCitizens = await apiCall('/citizens');
+        renderCitizens(allCitizens);
+    } catch (err) {
+        // handled
+    }
+}
+
+function renderCitizens(citizens) {
+    var tbody = document.getElementById('citizensBody');
+    if (citizens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No citizens found.</td></tr>';
+        return;
+    }
+    var rows = '';
+    citizens.forEach(function(c) {
+        var statusBadge = c.is_verified
+            ? '<span class="badge badge-verified">Verified</span>'
+            : '<span class="badge badge-flagged">Flagged</span>';
+        rows += '<tr>' +
+            '<td>' + c.id + '</td>' +
+            '<td><strong>' + escapeHtml(c.name) + '</strong></td>' +
+            '<td><code>' + escapeHtml(c.aadhar_number) + '</code></td>' +
+            '<td><code>' + escapeHtml(c.pan_number) + '</code></td>' +
+            '<td>' + (c.age || '-') + '</td>' +
+            '<td>' + escapeHtml(c.gender || '-') + '</td>' +
+            '<td>' + escapeHtml(c.city || '-') + '</td>' +
+            '<td>' + escapeHtml(c.state || '-') + '</td>' +
+            '<td>' + escapeHtml(c.phone || '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td class="text-nowrap">' +
+                '<button class="btn btn-sm btn-outline-primary me-1" onclick="editCitizen(' + c.id + ')" title="Edit"><i class="bi bi-pencil"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger" onclick="deleteCitizen(' + c.id + ', \'' + escapeHtml(c.name).replace(/'/g, "\\'") + '\')" title="Delete"><i class="bi bi-trash"></i></button>' +
+            '</td></tr>';
+    });
+    tbody.innerHTML = rows;
+}
+
+function filterCitizens() {
+    var q = document.getElementById('citizenSearch').value.toLowerCase();
+    if (!q) {
+        renderCitizens(allCitizens);
+        return;
+    }
+    var filtered = allCitizens.filter(function(c) {
+        return (c.name && c.name.toLowerCase().includes(q)) ||
+            (c.aadhar_number && c.aadhar_number.toLowerCase().includes(q)) ||
+            (c.pan_number && c.pan_number.toLowerCase().includes(q)) ||
+            (c.city && c.city.toLowerCase().includes(q)) ||
+            (c.state && c.state.toLowerCase().includes(q));
+    });
+    renderCitizens(filtered);
+}
+
+function openCitizenModal(data) {
+    document.getElementById('citizenModalTitle').textContent = data ? 'Edit Citizen' : 'Add Citizen';
+    document.getElementById('citizenId').value = data ? data.id : '';
+    document.getElementById('citizenAadhar').value = data ? data.aadhar_number : '';
+    document.getElementById('citizenPan').value = data ? data.pan_number : '';
+    document.getElementById('citizenName').value = data ? data.name : '';
+    document.getElementById('citizenAge').value = data ? data.age : '';
+    document.getElementById('citizenGender').value = data ? (data.gender || '') : '';
+    document.getElementById('citizenDob').value = data ? (data.dob || '') : '';
+    document.getElementById('citizenPhone').value = data ? (data.phone || '') : '';
+    document.getElementById('citizenEmail').value = data ? (data.email || '') : '';
+    document.getElementById('citizenAddress').value = data ? (data.address || '') : '';
+    document.getElementById('citizenCity').value = data ? (data.city || '') : '';
+    document.getElementById('citizenState').value = data ? (data.state || '') : '';
+    document.getElementById('citizenPhoto').value = data ? (data.photo_url || '') : '';
+    document.getElementById('citizenVerified').checked = data ? !!data.is_verified : true;
+    new bootstrap.Modal(document.getElementById('citizenModal')).show();
+}
+
+function editCitizen(id) {
+    var c = allCitizens.find(function(x) { return x.id === id; });
+    if (c) openCitizenModal(c);
+}
+
+async function saveCitizen() {
+    var id = document.getElementById('citizenId').value;
+    var body = {
+        aadhar_number: document.getElementById('citizenAadhar').value.trim(),
+        pan_number: document.getElementById('citizenPan').value.trim(),
+        name: document.getElementById('citizenName').value.trim(),
+        age: parseInt(document.getElementById('citizenAge').value),
+        dob: document.getElementById('citizenDob').value || null,
+        gender: document.getElementById('citizenGender').value || null,
+        phone: document.getElementById('citizenPhone').value.trim() || null,
+        email: document.getElementById('citizenEmail').value.trim() || null,
+        address: document.getElementById('citizenAddress').value.trim() || null,
+        city: document.getElementById('citizenCity').value.trim() || null,
+        state: document.getElementById('citizenState').value.trim() || null,
+        photo_url: document.getElementById('citizenPhoto').value.trim() || null,
+        is_verified: document.getElementById('citizenVerified').checked ? 1 : 0
+    };
+
+    if (!body.aadhar_number || !body.pan_number || !body.name || !body.age) {
+        showToast('Aadhar, PAN, Name, and Age are required', 'warning');
+        return;
+    }
+
+    try {
+        if (id) {
+            await apiCall('/citizens/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Citizen updated successfully');
+        } else {
+            await apiCall('/citizens', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Citizen created successfully');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('citizenModal')).hide();
+        loadCitizens();
+        loadDashboard();
+    } catch (err) {
+        // handled
+    }
+}
+
+async function deleteCitizen(id, name) {
+    if (!confirm('Delete citizen "' + name + '"? This cannot be undone.')) return;
+    try {
+        await apiCall('/citizens/' + id, { method: 'DELETE' });
+        showToast('Citizen deleted');
+        loadCitizens();
+        loadDashboard();
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== LAND RECORDS ====================
+async function loadLand() {
+    try {
+        allLandRecords = await apiCall('/land-records');
+        renderLand(allLandRecords);
+    } catch (err) {
+        // handled
+    }
+}
+
+function renderLand(records) {
+    var tbody = document.getElementById('landBody');
+    if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No land records found.</td></tr>';
+        return;
+    }
+    var rows = '';
+    records.forEach(function(r) {
+        var flags = '';
+        if (r.has_encumbrance) flags += '<span class="badge badge-encumbered me-1">Encumbered</span>';
+        if (r.has_litigation) flags += '<span class="badge badge-litigation me-1">Litigation</span>';
+        if (r.is_registered_on_chain) flags += '<span class="badge badge-onchain me-1">On-Chain</span>';
+        if (!flags) flags = '<span class="text-muted">Clear</span>';
+
+        rows += '<tr>' +
+            '<td>' + r.id + '</td>' +
+            '<td><code>' + escapeHtml(r.property_pid) + '</code></td>' +
+            '<td><code>' + escapeHtml(r.survey_number) + '</code></td>' +
+            '<td>' + (r.area ? r.area.toLocaleString('en-IN') : '-') + '</td>' +
+            '<td>' + escapeHtml(r.city || '-') + '</td>' +
+            '<td>' + escapeHtml(r.owner_name) + '</td>' +
+            '<td class="amount">' + formatINR(r.market_value) + '</td>' +
+            '<td>' + escapeHtml(r.land_type || '-') + '</td>' +
+            '<td>' + flags + '</td>' +
+            '<td class="text-nowrap">' +
+                '<button class="btn btn-sm btn-outline-primary me-1" onclick="editLand(' + r.id + ')" title="Edit"><i class="bi bi-pencil"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger" onclick="deleteLand(' + r.id + ', \'' + escapeHtml(r.property_pid).replace(/'/g, "\\'") + '\')" title="Delete"><i class="bi bi-trash"></i></button>' +
+            '</td></tr>';
+    });
+    tbody.innerHTML = rows;
+}
+
+function filterLand() {
+    var q = document.getElementById('landSearch').value.toLowerCase();
+    if (!q) {
+        renderLand(allLandRecords);
+        return;
+    }
+    var filtered = allLandRecords.filter(function(r) {
+        return (r.property_pid && r.property_pid.toLowerCase().includes(q)) ||
+            (r.survey_number && r.survey_number.toLowerCase().includes(q)) ||
+            (r.city && r.city.toLowerCase().includes(q)) ||
+            (r.owner_name && r.owner_name.toLowerCase().includes(q)) ||
+            (r.owner_aadhar && r.owner_aadhar.toLowerCase().includes(q));
+    });
+    renderLand(filtered);
+}
+
+function openLandModal(data) {
+    document.getElementById('landModalTitle').textContent = data ? 'Edit Land Record' : 'Add Land Record';
+    document.getElementById('landId').value = data ? data.id : '';
+    document.getElementById('landPid').value = data ? data.property_pid : '';
+    document.getElementById('landSurvey').value = data ? data.survey_number : '';
+    document.getElementById('landArea').value = data ? data.area : '';
+    document.getElementById('landCity').value = data ? data.city : '';
+    document.getElementById('landState').value = data ? data.state : '';
+    document.getElementById('landDistrict').value = data ? (data.district || '') : '';
+    document.getElementById('landTaluk').value = data ? (data.taluk || '') : '';
+    document.getElementById('landVillage').value = data ? (data.village || '') : '';
+    document.getElementById('landType').value = data ? (data.land_type || '') : '';
+    document.getElementById('landOwnerName').value = data ? data.owner_name : '';
+    document.getElementById('landOwnerAadhar').value = data ? data.owner_aadhar : '';
+    document.getElementById('landValue').value = data ? data.market_value : '';
+    document.getElementById('landRegDate').value = data ? (data.registration_date || '') : '';
+    document.getElementById('landLat').value = data ? (data.latitude || '') : '';
+    document.getElementById('landLng').value = data ? (data.longitude || '') : '';
+    document.getElementById('landEncumbrance').checked = data ? !!data.has_encumbrance : false;
+    document.getElementById('landLitigation').checked = data ? !!data.has_litigation : false;
+    document.getElementById('landOnChain').checked = data ? !!data.is_registered_on_chain : false;
+    new bootstrap.Modal(document.getElementById('landModal')).show();
+}
+
+function editLand(id) {
+    var r = allLandRecords.find(function(x) { return x.id === id; });
+    if (r) openLandModal(r);
+}
+
+async function saveLand() {
+    var id = document.getElementById('landId').value;
+    var body = {
+        property_pid: document.getElementById('landPid').value.trim(),
+        survey_number: document.getElementById('landSurvey').value.trim(),
+        area: parseInt(document.getElementById('landArea').value),
+        city: document.getElementById('landCity').value.trim(),
+        state: document.getElementById('landState').value.trim(),
+        district: document.getElementById('landDistrict').value.trim() || null,
+        taluk: document.getElementById('landTaluk').value.trim() || null,
+        village: document.getElementById('landVillage').value.trim() || null,
+        land_type: document.getElementById('landType').value || null,
+        owner_name: document.getElementById('landOwnerName').value.trim(),
+        owner_aadhar: document.getElementById('landOwnerAadhar').value.trim(),
+        market_value: parseInt(document.getElementById('landValue').value),
+        registration_date: document.getElementById('landRegDate').value || null,
+        latitude: document.getElementById('landLat').value ? parseFloat(document.getElementById('landLat').value) : null,
+        longitude: document.getElementById('landLng').value ? parseFloat(document.getElementById('landLng').value) : null,
+        has_encumbrance: document.getElementById('landEncumbrance').checked ? 1 : 0,
+        has_litigation: document.getElementById('landLitigation').checked ? 1 : 0,
+        is_registered_on_chain: document.getElementById('landOnChain').checked ? 1 : 0
+    };
+
+    if (!body.property_pid || !body.survey_number || !body.area || !body.city || !body.state || !body.owner_name || !body.owner_aadhar || !body.market_value) {
+        showToast('PID, Survey No, Area, City, State, Owner Name, Owner Aadhar, and Market Value are required', 'warning');
+        return;
+    }
+
+    try {
+        if (id) {
+            await apiCall('/land-records/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Land record updated successfully');
+        } else {
+            await apiCall('/land-records', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Land record created successfully');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('landModal')).hide();
+        loadLand();
+        loadDashboard();
+    } catch (err) {
+        // handled
+    }
+}
+
+async function deleteLand(id, pid) {
+    if (!confirm('Delete land record "' + pid + '"? This cannot be undone.')) return;
+    try {
+        await apiCall('/land-records/' + id, { method: 'DELETE' });
+        showToast('Land record deleted');
+        loadLand();
+        loadDashboard();
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== BANK ACCOUNTS ====================
+async function loadBank() {
+    try {
+        allBankAccounts = await apiCall('/bank-accounts');
+        renderBank(allBankAccounts);
+    } catch (err) {
+        // handled
+    }
+}
+
+function renderBank(accounts) {
+    var tbody = document.getElementById('bankBody');
+    if (accounts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No bank accounts found.</td></tr>';
+        return;
+    }
+    var rows = '';
+    accounts.forEach(function(a) {
+        var statusBadge = a.is_active
+            ? '<span class="badge badge-active">Active</span>'
+            : '<span class="badge badge-inactive">Inactive</span>';
+
+        rows += '<tr>' +
+            '<td>' + a.id + '</td>' +
+            '<td><code>' + escapeHtml(a.account_number) + '</code></td>' +
+            '<td><code>' + escapeHtml(a.ifsc) + '</code></td>' +
+            '<td>' + escapeHtml(a.bank_name) + '</td>' +
+            '<td>' + escapeHtml(a.holder_name) + '</td>' +
+            '<td><code>' + escapeHtml(a.aadhar_linked) + '</code></td>' +
+            '<td><code>' + escapeHtml(a.pan_linked) + '</code></td>' +
+            '<td class="amount">' + formatINR(a.balance) + '</td>' +
+            '<td>' + escapeHtml(a.account_type || 'Savings') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td class="text-nowrap">' +
+                '<button class="btn btn-sm btn-outline-primary" onclick="editBank(' + a.id + ')" title="Edit"><i class="bi bi-pencil"></i></button>' +
+            '</td></tr>';
+    });
+    tbody.innerHTML = rows;
+}
+
+function filterBank() {
+    var q = document.getElementById('bankSearch').value.toLowerCase();
+    if (!q) {
+        renderBank(allBankAccounts);
+        return;
+    }
+    var filtered = allBankAccounts.filter(function(a) {
+        return (a.account_number && a.account_number.toLowerCase().includes(q)) ||
+            (a.bank_name && a.bank_name.toLowerCase().includes(q)) ||
+            (a.holder_name && a.holder_name.toLowerCase().includes(q)) ||
+            (a.aadhar_linked && a.aadhar_linked.toLowerCase().includes(q)) ||
+            (a.ifsc && a.ifsc.toLowerCase().includes(q));
+    });
+    renderBank(filtered);
+}
+
+function openBankModal(data) {
+    document.getElementById('bankModalTitle').textContent = data ? 'Edit Bank Account' : 'Add Bank Account';
+    document.getElementById('bankId').value = data ? data.id : '';
+    document.getElementById('bankAccount').value = data ? data.account_number : '';
+    document.getElementById('bankIfsc').value = data ? data.ifsc : '';
+    document.getElementById('bankName').value = data ? data.bank_name : '';
+    document.getElementById('bankHolder').value = data ? data.holder_name : '';
+    document.getElementById('bankAadhar').value = data ? data.aadhar_linked : '';
+    document.getElementById('bankPan').value = data ? data.pan_linked : '';
+    document.getElementById('bankBalance').value = data ? data.balance : '';
+    document.getElementById('bankType').value = data ? (data.account_type || 'Savings') : 'Savings';
+    document.getElementById('bankBranch').value = data ? (data.branch || '') : '';
+    document.getElementById('bankActive').checked = data ? !!data.is_active : true;
+    new bootstrap.Modal(document.getElementById('bankModal')).show();
+}
+
+function editBank(id) {
+    var a = allBankAccounts.find(function(x) { return x.id === id; });
+    if (a) openBankModal(a);
+}
+
+async function saveBank() {
+    var id = document.getElementById('bankId').value;
+    var body = {
+        account_number: document.getElementById('bankAccount').value.trim(),
+        ifsc: document.getElementById('bankIfsc').value.trim(),
+        bank_name: document.getElementById('bankName').value.trim(),
+        holder_name: document.getElementById('bankHolder').value.trim(),
+        aadhar_linked: document.getElementById('bankAadhar').value.trim(),
+        pan_linked: document.getElementById('bankPan').value.trim(),
+        balance: parseFloat(document.getElementById('bankBalance').value),
+        account_type: document.getElementById('bankType').value || 'Savings',
+        branch: document.getElementById('bankBranch').value.trim() || null,
+        is_active: document.getElementById('bankActive').checked ? 1 : 0
+    };
+
+    if (!body.account_number || !body.ifsc || !body.bank_name || !body.holder_name || !body.aadhar_linked || !body.pan_linked || isNaN(body.balance)) {
+        showToast('Account Number, IFSC, Bank Name, Holder Name, Aadhar, PAN, and Balance are required', 'warning');
+        return;
+    }
+
+    try {
+        if (id) {
+            await apiCall('/bank-accounts/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Bank account updated successfully');
+        } else {
+            await apiCall('/bank-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            showToast('Bank account created successfully');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('bankModal')).hide();
+        loadBank();
+        loadDashboard();
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== TRANSACTIONS ====================
+async function loadTransactions() {
+    try {
+        var transactions = await apiCall('/transactions');
+        var tbody = document.getElementById('transactionsBody');
+        if (transactions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No transactions yet. Run the DApp to generate payment records.</td></tr>';
+            return;
+        }
+        var rows = '';
+        transactions.forEach(function(t) {
+            var statusClass = t.status === 'SUCCESS' ? 'badge-success' : t.status === 'FAILED' ? 'badge-failed' : 'badge-pending';
+            var txHash = t.blockchain_tx_hash
+                ? '<code title="' + escapeHtml(t.blockchain_tx_hash) + '">' + escapeHtml(t.blockchain_tx_hash.substring(0, 12)) + '...</code>'
+                : '<span class="text-muted">-</span>';
+
+            rows += '<tr>' +
+                '<td>' + t.id + '</td>' +
+                '<td><code>' + escapeHtml(t.transaction_id) + '</code></td>' +
+                '<td><code>' + escapeHtml(t.buyer_aadhar) + '</code></td>' +
+                '<td><code>' + escapeHtml(t.seller_aadhar) + '</code></td>' +
+                '<td><code>' + escapeHtml(t.land_pid) + '</code></td>' +
+                '<td class="amount">' + formatINR(t.amount) + '</td>' +
+                '<td><code>' + escapeHtml(t.buyer_account) + '</code></td>' +
+                '<td><code>' + escapeHtml(t.seller_account) + '</code></td>' +
+                '<td><span class="badge ' + statusClass + '">' + escapeHtml(t.status) + '</span></td>' +
+                '<td>' + txHash + '</td>' +
+                '<td>' + formatDate(t.created_at) + '</td></tr>';
+        });
+        tbody.innerHTML = rows;
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== VERIFICATIONS ====================
+async function loadVerifications() {
+    try {
+        var verifications = await apiCall('/verifications');
+        var tbody = document.getElementById('verificationsBody');
+        if (verifications.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No verifications yet. Run the DApp to generate verification records.</td></tr>';
+            return;
+        }
+        var rows = '';
+        verifications.forEach(function(v) {
+            var resultBadge = v.result === 'VERIFIED'
+                ? '<span class="badge badge-verified">VERIFIED</span>'
+                : '<span class="badge badge-flagged">REJECTED</span>';
+            var typeBadge;
+            switch (v.verification_type) {
+                case 'AADHAR': typeBadge = '<span class="badge bg-primary">AADHAR</span>'; break;
+                case 'PAN': typeBadge = '<span class="badge bg-info">PAN</span>'; break;
+                case 'LAND': typeBadge = '<span class="badge bg-warning text-dark">LAND</span>'; break;
+                default: typeBadge = '<span class="badge bg-secondary">' + escapeHtml(v.verification_type) + '</span>';
+            }
+
+            var details = '-';
+            if (v.details) {
+                try {
+                    var parsed = JSON.parse(v.details);
+                    details = '<small>' + escapeHtml(JSON.stringify(parsed).substring(0, 80)) + '</small>';
+                } catch (e) {
+                    details = '<small>' + escapeHtml(String(v.details).substring(0, 80)) + '</small>';
+                }
+            }
+
+            rows += '<tr>' +
+                '<td>' + v.id + '</td>' +
+                '<td><code>' + escapeHtml(v.verification_id) + '</code></td>' +
+                '<td><code>' + escapeHtml(v.aadhar_number) + '</code></td>' +
+                '<td>' + typeBadge + '</td>' +
+                '<td>' + resultBadge + '</td>' +
+                '<td>' + details + '</td>' +
+                '<td><code title="' + escapeHtml(v.requested_by || '') + '">' + (v.requested_by ? escapeHtml(v.requested_by.substring(0, 10)) + '...' : '-') + '</code></td>' +
+                '<td>' + formatDate(v.created_at) + '</td></tr>';
+        });
+        tbody.innerHTML = rows;
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== RESET ====================
+function confirmReset() {
+    new bootstrap.Modal(document.getElementById('resetModal')).show();
+}
+
+async function performReset() {
+    try {
+        await apiCall('/reset', { method: 'POST' });
+        bootstrap.Modal.getInstance(document.getElementById('resetModal')).hide();
+        showToast('Demo data reset successfully! On-chain flags cleared, transactions wiped, balances restored.', 'success');
+        loadAll();
+    } catch (err) {
+        // handled
+    }
+}
+
+// ==================== TAB SWITCHING ====================
+document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]').forEach(function(tab) {
+    tab.addEventListener('shown.bs.tab', function(e) {
+        var target = e.target.getAttribute('data-bs-target');
+        switch (target) {
+            case '#dashboard': loadDashboard(); break;
+            case '#citizens': loadCitizens(); break;
+            case '#land': loadLand(); break;
+            case '#bank': loadBank(); break;
+            case '#transactions': loadTransactions(); break;
+            case '#verifications': loadVerifications(); break;
+        }
+    });
+});
+
+// ==================== INITIAL LOAD ====================
+function loadAll() {
+    loadDashboard();
+    loadCitizens();
+    loadLand();
+    loadBank();
+    loadTransactions();
+    loadVerifications();
+}
+
+loadAll();
+</script>
+</body>
+</html>

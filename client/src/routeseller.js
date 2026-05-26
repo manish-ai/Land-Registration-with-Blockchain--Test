@@ -5,63 +5,64 @@ import sellerProfile from "./views/sellerProfile";
 import viewImage from "./views/viewImage";
 import updateSeller from "./views/updateSeller";
 import Help from "./Help";
+import AuditTrail from "./views/AuditTrail";
 
 var routes = [
   {
-    path: "/SellerDashboard",
+    path: "/dashboard",
     name: "Dashboard",
-    rtlName: "لوحة القيادة",
     icon: "tim-icons icon-chart-pie-36",
     component: SellerDashboard,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/AddLand",
+    path: "/add-land",
     name: "Add Land",
-    rtlName: "الرموز",
     icon: "tim-icons icon-world",
     component: AddLand,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/sellerProfile",
+    path: "/profile",
     name: "Seller Profile",
-    rtlName: "الرموز",
     icon: "tim-icons icon-single-02",
     component: sellerProfile,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/ApproveRequest",
+    path: "/requests",
     name: "Land Requests",
-    rtlName: "الرموز",
     icon: "tim-icons icon-badge",
     component: ApproveRequest,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/viewImage",
+    path: "/gallery",
     name: "Land Gallery",
-    rtlName: "الرموز",
     icon: "tim-icons icon-image-02",
     component: viewImage,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/Help",
+    path: "/help",
     name: "Help",
-    rtlName: "الرموز",
-    icon: "tim-icons icon-image-02",
+    icon: "tim-icons icon-support-17",
     component: Help,
-    layout: "/Seller",
+    layout: "/seller",
   },
   {
-    path: "/updateSeller",
+    path: "/update-profile",
     name: "",
-    rtlName: "الرموز",
     icon: "tim-icons",
     component: updateSeller,
-    layout: "/Seller",
+    layout: "/seller",
+  },
+  {
+    path: "/audit",
+    name: "Audit Trail",
+    icon: "tim-icons icon-notes",
+    component: AuditTrail,
+    layout: "/seller",
   },
 ];
 export default routes;

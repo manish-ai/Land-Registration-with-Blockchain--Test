@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -34,16 +35,12 @@ import {
     UncontrolledTooltip,
 } from "reactstrap";
 
-import { emailjs } from 'emailjs-com';
 const drizzleOptions = {
     contracts: [Land]
 }
 
 // var buyers = 0;
 // var sellers = 0;
-var buyerTable = [];
-var completed = true;
-
 function sendMail(email, name){
     // alert(typeof(name));
 
@@ -69,6 +66,7 @@ class BuyerInfo extends Component {
             web3: null,
             buyers: 0,
             verified: '',
+            buyerTable: [],
         }
     }
 
@@ -92,9 +90,6 @@ class BuyerInfo extends Component {
     NotverifyBuyer = (item, email, name) => async() => {
         // alert('Before mail');
         sendMail(email, name);
-        // alert('After mail');
-
-        await new Promise(resolve => setTimeout(resolve, 10000));
 
         await this.state.LandInstance.methods.rejectBuyer(
             item
@@ -113,7 +108,7 @@ class BuyerInfo extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -122,32 +117,32 @@ class BuyerInfo extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
 
-            var buyersCount = await this.state.LandInstance.methods.getBuyersCount().call();
+            var buyersCount = await instance.methods.getBuyersCount().call();
             console.log(buyersCount);
            
 
             var buyersMap = [];
-            buyersMap = await this.state.LandInstance.methods.getBuyer().call();
+            buyersMap = await instance.methods.getBuyer().call();
             //console.log(buyersMap);
 
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
+            var verified = await instance.methods.isLandInspector(currentAddress).call();
             //console.log(verified);
             this.setState({ verified: verified });
 
+            const buyerTable = [];
             for (let i = 0; i < buyersCount; i++) {
-                // var i =3;
-                var buyer = await this.state.LandInstance.methods.getBuyerDetails(buyersMap[i]).call();
+                var buyer = await instance.methods.getBuyerDetails(buyersMap[i]).call();
 
-                var buyer_verify = await this.state.LandInstance.methods.isVerified(buyersMap[i]).call();
+                var buyer_verify = await instance.methods.isVerified(buyersMap[i]).call();
                 console.log(buyer_verify);
                 buyer.verified = buyer_verify;
 
-                var not_verify = await this.state.LandInstance.methods.isRejected(buyersMap[i]).call();
+                var not_verify = await instance.methods.isRejected(buyersMap[i]).call();
                 console.log(not_verify);
-                buyerTable.push(<tr><td>{i + 1}</td><td>{buyersMap[i]}</td><td>{buyer[0]}</td><td>{buyer[5]}</td><td>{buyer[4]}</td><td>{buyer[1]}</td><td>{buyer[6]}</td><td>{buyer[2]}</td><td><a href={`https://ipfs.io/ipfs/${buyer[3]}`} target="_blank">Click Here</a></td>
+                buyerTable.push(<tr key={i}><td>{i + 1}</td><td>{buyersMap[i]}</td><td>{buyer[0]}</td><td>{buyer[1]}</td><td>{buyer[3]}</td><td>{buyer[2]}</td><td>{buyer[4]}</td><td><a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank">Click Here</a></td>
                     <td>{buyer.verified.toString()}</td>
                     <td>
                         <Button onClick={this.verifyBuyer(buyersMap[i])} disabled={buyer_verify || not_verify} className="button-vote">
@@ -155,14 +150,14 @@ class BuyerInfo extends Component {
                     </Button>
                     </td>
                     <td>
-                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[4], buyer[0])} disabled={buyer_verify || not_verify} className="btn btn-danger">
+                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[3], buyer[0])} disabled={buyer_verify || not_verify} className="btn btn-danger">
                            Reject
                     </Button>
                     </td>
                 </tr>)
 
             }
-            this.setState({ buyers: buyerTable.length });
+            this.setState({ buyers: buyerTable.length, buyerTable });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -230,17 +225,16 @@ class BuyerInfo extends Component {
                                                     <th>Age</th>
                                                     <th>Email</th>
                                                     <th>City</th>
-                                                    <th>Aadhar Number</th>
-                                                    <th>Pan Number</th>
-                                                    <th>Aadhar Card Document</th>
+                                                    <th>Verification ID</th>
+                                                    <th>Document</th>
                                                     <th>Verification Status</th>
                                                     <th>Verify Buyer</th>
                                                     <th>Reject Buyer</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {buyerTable.length > 0 ? buyerTable : (
-                                                    <tr><td colSpan="12" style={{textAlign: "center", color: "#888"}}>No buyers registered yet.</td></tr>
+                                                {this.state.buyerTable.length > 0 ? this.state.buyerTable : (
+                                                    <tr><td colSpan="11" style={{textAlign: "center", color: "#888"}}>No buyers registered yet.</td></tr>
                                                 )}
                                             </tbody>
 

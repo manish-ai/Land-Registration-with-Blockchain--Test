@@ -3,6 +3,7 @@ import { Line, Bar } from "react-chartjs-2";
 import LandContract from "../artifacts/Land.json";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner  } from 'react-bootstrap';
 import {  Link} from 'react-router-dom';
@@ -64,6 +65,7 @@ class OwnedLands extends Component {
 }
 
   componentDidMount = async () => {
+    row = [];
     try {
       //Get network provider and web3 instance
       const web3 = await getWeb3();
@@ -77,17 +79,17 @@ class OwnedLands extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      const currentAddress = accounts[0];
+      const currentAddress = getWalletAddress();
       console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+      verified = await instance.methods.isVerified(currentAddress).call();
       console.log(verified);
       this.setState({ verified: verified });
-      var registered = await this.state.LandInstance.methods.isBuyer(currentAddress).call();
+      var registered = await instance.methods.isBuyer(currentAddress).call();
       console.log(registered);
       this.setState({ registered: registered });
 
-      var count = await this.state.LandInstance.methods.getLandsCount().call();
+      var count = await instance.methods.getLandsCount().call();
       count = parseInt(count);
       console.log(typeof (count));
       console.log(count);
@@ -113,15 +115,16 @@ class OwnedLands extends Component {
     
 
       for (var i = 0; i < count; i++) {
-        var owner = await this.state.LandInstance.methods.getLandOwner(i+1).call();
+        var owner = await instance.methods.getLandOwner(i+1).call();
         console.log(owner.toLowerCase());
         console.log(currentAddress);
-        if(owner.toLowerCase() == currentAddress){
+        if(owner.toLowerCase() == currentAddress.toLowerCase()){
             row.push(<tr><td>{i + 1}</td><td>{rowsArea[i]}</td><td>{rowsCity[i]}</td><td>{rowsState[i]}</td><td>{rowsPrice[i]}</td><td>{rowsPID[i]}</td><td>{rowsSurvey[i]}</td>
                 </tr>)
         }
       }
       console.log(row);
+      this.setState({ count });
 
     } catch (error) {
       // Catch any errors for any of the above operations.

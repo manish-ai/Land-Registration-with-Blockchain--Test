@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Route, Switch, Redirect, useLocation } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { isLoggedIn, getRole, logout, getName } from "../../services/authService";
 // javascript plugin used to create scrollbars on windows
 import PerfectScrollbar from "perfect-scrollbar";
 
@@ -8,8 +9,6 @@ import PerfectScrollbar from "perfect-scrollbar";
 import AdminNavbar from "../../components/Navbars/AdminNavbar";
 import Footer from "../../components/Footer/Footer";
 import Sidebar from "../../components/Sidebar/Sidebar";
-import FixedPlugin from "../../components/FixedPlugin/FixedPlugin";
-import LIDashboard from "../../views/LIDashboard";
 import routes from "../../routesLI";
 
 import logo from "../../assets/img/react-logo.png";
@@ -42,7 +41,7 @@ class ErrorBoundary extends React.Component {
 
 var ps;
 
-function LI(props) {
+function LI() {
   const location = useLocation();
   const mainPanelRef = React.useRef(null);
   const [sidebarOpened, setsidebarOpened] = React.useState(
@@ -89,11 +88,12 @@ function LI(props) {
   };
   const getRoutes = (routes) => {
     return routes.map((prop, key) => {
-      if (prop.layout === "/LI") {
+      if (prop.layout === "/admin") {
+        const C = prop.component;
         return (
           <Route
-            path={prop.layout + prop.path}
-            component={prop.component}
+            path={prop.path}
+            element={<C />}
             key={key}
           />
         );
@@ -111,6 +111,12 @@ function LI(props) {
     }
     return "Land Registry";
   };
+
+  if (!isLoggedIn() || getRole() !== 'inspector') {
+    window.location.href = '/';
+    return null;
+  }
+
   return (
     <BackgroundColorContext.Consumer>
       {({ color, changeColor }) => (
@@ -130,12 +136,14 @@ function LI(props) {
                 brandText={getBrandText(location.pathname)}
                 toggleSidebar={toggleSidebar}
                 sidebarOpened={sidebarOpened}
+                userName={getName()}
+                onLogout={logout}
               />
               <ErrorBoundary>
-                <Switch>
+                <Routes>
                   {getRoutes(routes)}
-                  <Redirect from="*" to="/LI/LIDashboard" />
-                </Switch>
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                </Routes>
               </ErrorBoundary>
               <Footer fluid />
 

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import Land from "../artifacts/Land.json"
 import getWeb3 from "../getWeb3"
+import { getWalletAddress } from '../services/authService'
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
@@ -36,8 +37,6 @@ const drizzleOptions = {
     contracts: [Land]
 }
 
-var requestTable = [];
-
 class ApproveRequest extends Component {
     constructor(props) {
         super(props)
@@ -48,6 +47,7 @@ class ApproveRequest extends Component {
             web3: null,
             registered: '',
             approved: '',
+            requestTable: [],
         }
     }
     approveRequest = (reqId) => async () => {
@@ -77,31 +77,31 @@ class ApproveRequest extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             console.log(currentAddress);
-            var registered = await this.state.LandInstance.methods.isSeller(currentAddress).call();
+            var registered = await instance.methods.isSeller(currentAddress).call();
             console.log(registered);
             this.setState({ registered: registered });
-            var requestsCount = await this.state.LandInstance.methods.getRequestsCount().call();
+            var requestsCount = await instance.methods.getRequestsCount().call();
             console.log(requestsCount);
             
+            const requestTable = [];
             for (let i = 1; i < requestsCount + 1; i++) {
-                var request = await this.state.LandInstance.methods.getRequestDetails(i).call();
-                var approved = await this.state.LandInstance.methods.isApproved(i).call();
+                var request = await instance.methods.getRequestDetails(i).call();
+                var approved = await instance.methods.isApproved(i).call();
                 console.log(approved);
-                if (currentAddress == request[0].toLowerCase()) {
-                    requestTable.push(<tr><td>{i}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
+                if (currentAddress.toLowerCase() === request[0].toLowerCase()) {
+                    requestTable.push(<tr key={i}><td>{i}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
                         <td>
                             <Button onClick={this.approveRequest(i)} disabled={approved} className="button-vote">
                                 Approve Request
                     </Button>
                         </td></tr>)
                 }
-                // console.log(request[1]);
             }
-            // console.log(requestTable);
+            this.setState({ requestTable });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -160,7 +160,9 @@ class ApproveRequest extends Component {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {requestTable}
+                                        {this.state.requestTable.length > 0 ? this.state.requestTable : (
+                                            <tr><td colSpan="5" style={{textAlign: "center", color: "#888"}}>No pending requests.</td></tr>
+                                        )}
                                     </tbody>
                                 </Table>
                             </CardBody>

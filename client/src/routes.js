@@ -5,63 +5,64 @@ import OwnedLands from "./views/OwnedLands";
 import MakePayment from "./views/MakePayment";
 import updateBuyer from "./views/updateBuyer";
 import Help from "./Help";
+import AuditTrail from "./views/AuditTrail";
 
 var routes = [
   {
     path: "/dashboard",
     name: "Dashboard",
-    rtlName: "لوحة القيادة",
     icon: "tim-icons icon-chart-pie-36",
     component: Dashboard,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/buyerProfile",
-    name: "Buyers Profile",
-    rtlName: "الرموز",
+    path: "/profile",
+    name: "Buyer Profile",
     icon: "tim-icons icon-single-02",
     component: buyerProfile,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/viewImage",
+    path: "/gallery",
     name: "Land Gallery",
-    rtlName: "الرموز",
     icon: "tim-icons icon-image-02",
     component: viewImage,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/OwnedLands",
+    path: "/owned-lands",
     name: "Owned Lands",
-    rtlName: "الرموز",
     icon: "tim-icons icon-bank",
     component: OwnedLands,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/MakePayment",
+    path: "/payment",
     name: "Make Payment",
-    rtlName: "الرموز",
     icon: "tim-icons icon-money-coins",
     component: MakePayment,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/Help",
+    path: "/help",
     name: "Help",
-    rtlName: "الرموز",
-    icon: "tim-icons icon-single-02",
+    icon: "tim-icons icon-support-17",
     component: Help,
-    layout: "/admin",
+    layout: "/buyer",
   },
   {
-    path: "/updateBuyer",
+    path: "/update-profile",
     name: "",
-    rtlName: "الرموز",
     icon: "tim-icons",
     component: updateBuyer,
-    layout: "/admin",
+    layout: "/buyer",
+  },
+  {
+    path: "/audit",
+    name: "Audit Trail",
+    icon: "tim-icons icon-notes",
+    component: AuditTrail,
+    layout: "/buyer",
   },
 ];
 export default routes;

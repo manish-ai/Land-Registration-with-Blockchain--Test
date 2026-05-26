@@ -1,11 +1,10 @@
 import React from 'react';
 import Login from "./login.component";
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import './index.css';
-import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import App from './App';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import reportWebVitals from './reportWebVitals';
-import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import RegisterBuyer from "./RegisterBuyer";
 import RegisterSeller from "./RegisterSeller";
 import AdminLayout from "./layouts/Admin/Admin";
@@ -19,24 +18,23 @@ import ThemeContextWrapper from "./components/ThemeWrapper/ThemeWrapper";
 import BackgroundColorWrapper from "./components/BackgroundColorWrapper/BackgroundColorWrapper";
 import Help from './Help';
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <ThemeContextWrapper>
     <BackgroundColorWrapper>
       <BrowserRouter>
-        <Switch>
-          <Route exact path='/' component={Login} />
-          <Route path="/RegisterBuyer" component={RegisterBuyer} />
-          <Route path="/RegisterSeller" component={RegisterSeller} />
-          <Route path="/admin" render={(props) => <AdminLayout {...props} />} />
-          <Route path="/LI" render={(props) => <LI {...props} />} />
-          <Route path="/Seller" render={(props) => <Seller {...props} />} />
-          <Route exact path='/Help' component={Help} />
-
-        </Switch>
+        <Routes>
+          <Route path='/' element={<Login />} />
+          <Route path="/RegisterBuyer" element={<RegisterBuyer />} />
+          <Route path="/RegisterSeller" element={<RegisterSeller />} />
+          <Route path="/admin/*" element={<LI />} />
+          <Route path="/buyer/*" element={<AdminLayout />} />
+          <Route path="/seller/*" element={<Seller />} />
+          <Route path='/Help' element={<Help />} />
+        </Routes>
       </BrowserRouter>
     </BackgroundColorWrapper>
-  </ThemeContextWrapper>,
-  document.getElementById('root')
+  </ThemeContextWrapper>
 );
 
 reportWebVitals();

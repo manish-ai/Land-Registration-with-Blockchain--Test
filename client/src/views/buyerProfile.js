@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import "../index.css";
 import { FormControl } from "react-bootstrap";
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -31,10 +32,6 @@ const drizzleOptions = {
     contracts: [Land]
 }
 
-var buyer;
-var buyerTable = [];
-var verification = [];
-
 class buyerProfile extends Component {
     constructor(props) {
         super(props)
@@ -46,6 +43,8 @@ class buyerProfile extends Component {
             buyers: 0,
             sellers: 0,
             verified: '',
+            buyerTable: null,
+            verification: null,
         }
     }
 
@@ -56,7 +55,8 @@ class buyerProfile extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            // Use accounts[1] for buyer — accounts[0] is used for seller registration
+            const currentAddress = getWalletAddress();
             console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -65,24 +65,25 @@ class buyerProfile extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
             
-            var buyer_verify = await this.state.LandInstance.methods.isVerified(currentAddress).call();
-            this.setState({verified: buyer_verify});     
-            var not_verify = await this.state.LandInstance.methods.isRejected(currentAddress).call();
+            var buyer_verify = await instance.methods.isVerified(currentAddress).call();
+            this.setState({verified: buyer_verify});
+            var not_verify = await instance.methods.isRejected(currentAddress).call();
+            let verificationEl;
             if(buyer_verify){
-              verification.push(<p id = "verified">Verified <i class="fas fa-user-check"></i></p>);
+              verificationEl = <p id="verified">Verified <i className="fas fa-user-check"></i></p>;
             }else if(not_verify){
-              verification.push(<p  id = "rejected">Rejected <i class="fas fa-user-times"></i></p>);
+              verificationEl = <p id="rejected">Rejected <i className="fas fa-user-times"></i></p>;
             }else{
-              verification.push(<p id = "unknown">Not Yet Verified <i class="fas fa-user-cog"></i></p>);
+              verificationEl = <p id="unknown">Not Yet Verified <i className="fas fa-user-cog"></i></p>;
             }
 
-            buyer = await this.state.LandInstance.methods.getBuyerDetails(currentAddress).call();
+            const buyer = await instance.methods.getBuyerDetails(currentAddress).call();
             console.log(buyer);
             console.log(buyer[0]);
 
-            buyerTable.push(<>
+            const buyerTableEl = (<>
             <Row>
                 <Col md="12">
                   <FormGroup>
@@ -115,7 +116,7 @@ class buyerProfile extends Component {
                     <Input
                       disabled
                       type="text"
-                      value={buyer[5]}
+                      value={buyer[1]}
                     />
                   </FormGroup>
                 </Col>
@@ -124,7 +125,31 @@ class buyerProfile extends Component {
               <Row>
                 <Col md="12">
                   <FormGroup>
+                    <label>City</label>
+                    <Input
+                      disabled
+                      type="text"
+                      value={buyer[2]}
+                    />
+                  </FormGroup>
+                </Col>
+              </Row>
+              <Row>
+                <Col md="12">
+                  <FormGroup>
                     <label>Email Address </label>
+                    <Input
+                      disabled
+                      type="text"
+                      value={buyer[3]}
+                    />
+                  </FormGroup>
+                </Col>
+              </Row>
+              <Row>
+                <Col md="12">
+                  <FormGroup>
+                    <label>Verification ID</label>
                     <Input
                       disabled
                       type="text"
@@ -136,48 +161,13 @@ class buyerProfile extends Component {
               <Row>
                 <Col md="12">
                   <FormGroup>
-                    <label>City</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[1]}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Aadhar Number</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[6]}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Pan Number</label>
-                    <Input
-                    disabled
-                    type="text"
-                    value={buyer[2]}  
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Your Aadhar Document</label>
-                    <div class="post-meta"><span class="timestamp"> <a href={`https://ipfs.io/ipfs/${buyer[3]}`} target="_blank">Here</a></span></div>
+                    <label>Your Document</label>
+                    <div className="post-meta"><span className="timestamp"> <a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank">Here</a></span></div>
                   </FormGroup>
                 </Col>
               </Row>
              </>);
+            this.setState({ buyerTable: buyerTableEl, verification: verificationEl });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -211,14 +201,14 @@ class buyerProfile extends Component {
                                 <Card>
                                     <CardHeader>
                                         <h5 className="title">Buyer Profile</h5>
-                                        <h5 className="title">{verification}</h5>
+                                        <h5 className="title">{this.state.verification}</h5>
 
                                     </CardHeader>
                                     <CardBody>
                                         <Form>
-                                            {buyerTable}
+                                            {this.state.buyerTable}
                                         </Form>
-                                        <Button href="/admin/updateBuyer"  className="btn-fill" disabled={!this.state.verified} color="primary">
+                                        <Button href="/buyer/update-profile"  className="btn-fill" disabled={!this.state.verified} color="primary">
                                             Edit Profile
                                       </Button>
                                     </CardBody>

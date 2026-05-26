@@ -3,15 +3,9 @@ import React, { Component } from "react";
 import classNames from "classnames";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
-import {
-  LoadingContainer,
-  AccountData,
-  ContractData,
-  ContractForm
-} from '../drizzle-shims/drizzle-react-components'
 // reactstrap components
 import {
   Button,
@@ -35,17 +29,6 @@ import {
 import "../card.css";
 
 
-const drizzleOptions = {
-  contracts: [Land]
-}
-
-
-var row = [];
-var countarr = [];
-var userarr = [];
-var reqsarr = [];
-var landOwner = [];
-// var requested = false;
 
 class Dashboard extends Component {
   constructor(props) {
@@ -57,6 +40,9 @@ class Dashboard extends Component {
       web3: null,
       count: 0,
       requested: false,
+      row: [],
+      totalLands: 0,
+      myRequestCount: 0,
     }
   }
 
@@ -73,7 +59,7 @@ class Dashboard extends Component {
       from: this.state.account,
       gas: 2100000
     }).then(response => {
-      this.props.history.push("#");
+      // navigation handled by reload below
     });
 
     //Reload
@@ -95,68 +81,50 @@ class Dashboard extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-      const currentAddress = accounts[0];
+      const currentAddress = getWalletAddress();
       console.log(currentAddress);
-      var registered = await this.state.LandInstance.methods.isBuyer(currentAddress).call();
+      var registered = await instance.methods.isBuyer(currentAddress).call();
       console.log(registered);
       this.setState({ registered: registered });
-      var count = await this.state.LandInstance.methods.getLandsCount().call();
+      var count = await instance.methods.getLandsCount().call();
       count = parseInt(count);
       console.log(typeof (count));
       console.log(count);
-      var verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
+      var verified = await instance.methods.isVerified(currentAddress).call();
       console.log(verified);
 
-      // var countbuyer = await this.state.LandInstance.methods.getBuyersCount().call();
-      // var countseller = await this.state.LandInstance.methods.getSellersCount().call();
-      // userarr.push(<p>{countseller.toString()}</p>);
-
-      // countarr.push(<p>{count.toString()}</p>);
-      countarr.push(<ContractData contract="Land" method="getLandsCount" />);
-      userarr.push(<ContractData contract="Land" method="getSellersCount" />);
-      reqsarr.push(<ContractData contract="Land" method="getRequestsCount" />);
-
-      var rowsArea = [];
-      var rowsCity = [];
-      var rowsState = [];
-      var rowsPrice = [];
-      var rowsPID = [];
-      var rowsSurvey = [];
-
-
-      var dict = {}
-      for (var i = 1; i < count + 1; i++) {
-        var address = await this.state.LandInstance.methods.getLandOwner(i).call();
-        dict[i] = address;
+      // Count this buyer's own requests
+      var requestsCount = await instance.methods.getRequestsCount().call();
+      requestsCount = parseInt(requestsCount);
+      let myRequestCount = 0;
+      for (var r = 1; r <= requestsCount; r++) {
+        var req = await instance.methods.getRequestDetails(r).call();
+        if (req[1].toLowerCase() === currentAddress.toLowerCase()) myRequestCount++;
       }
 
-      console.log(dict[1]);
+      // Build the available lands table (all lands, for buyer to browse & request)
+      const row = [];
+      for (var i = 1; i <= count; i++) {
+        var landOwner = await instance.methods.getLandOwner(i).call();
+        var area = await instance.methods.getArea(i).call();
+        var city = await instance.methods.getCity(i).call();
+        var state = await instance.methods.getState(i).call();
+        var price = await instance.methods.getPrice(i).call();
+        var pid = await instance.methods.getPID(i).call();
+        var survey = await instance.methods.getSurveyNumber(i).call();
+        var requested = await instance.methods.isRequested(i).call();
 
-      for (var i = 1; i < count + 1; i++) {
-        rowsArea.push(<ContractData contract="Land" method="getArea" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsCity.push(<ContractData contract="Land" method="getCity" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsState.push(<ContractData contract="Land" method="getState" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPrice.push(<ContractData contract="Land" method="getPrice" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPID.push(<ContractData contract="Land" method="getPID" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsSurvey.push(<ContractData contract="Land" method="getSurveyNumber" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-      }
-
-      for (var i = 0; i < count; i++) {
-        var requested = await this.state.LandInstance.methods.isRequested(i + 1).call();
-        // console.log(requested);
-
-        row.push(<tr><td>{i + 1}</td><td>{rowsArea[i]}</td><td>{rowsCity[i]}</td><td>{rowsState[i]}</td><td>{rowsPrice[i]}</td><td>{rowsPID[i]}</td><td>{rowsSurvey[i]}</td>
+        row.push(<tr key={i}><td>{i}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{price}</td><td>{pid}</td><td>{survey}</td>
           <td>
-            <Button onClick={this.requestLand(dict[i + 1], i + 1)} disabled={!verified || requested} className="button-vote">
+            <Button onClick={this.requestLand(landOwner, i)} disabled={!verified || requested} className="button-vote">
               Request Land
             </Button>
           </td>
         </tr>)
       }
-      console.log(row);
-      this.forceUpdate();
+      this.setState({ row, totalLands: count, myRequestCount });
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -207,38 +175,25 @@ class Dashboard extends Component {
     return (
       <>
         <div className="content">
-        <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-              <div className="main-section">
+          <div className="main-section">
                 <Row>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-skyblue">
-                      <div class="icon-section">
-                        <i class="fa fa-users" aria-hidden="true"></i><br />
-                        <medium>Total Sellers</medium><br />
-                       <p> {userarr} </p>
-                      </div>
-                      <div class="detail-section"><br />
-                      </div>
-                    </div>
-                  </Col>
                   <Col lg="4">
                     <div class="dashbord dashbord-orange">
                       <div class="icon-section">
                         <i class="fa fa-landmark" aria-hidden="true"></i><br />
-                        <medium>Registered Lands Count</medium><br />
-                        <p>{countarr}</p>
+                        <medium>Available Lands</medium><br />
+                        <p>{this.state.totalLands}</p>
                       </div>
                       <div class="detail-section"><br />
                       </div>
                     </div>
                   </Col>
                   <Col lg="4">
-                    <div class="dashbord dashbord-blue">
+                    <div class="dashbord dashbord-skyblue">
                       <div class="icon-section">
                         <i class="fa fa-bell" aria-hidden="true"></i><br />
-                        <medium>Total Requests</medium><br />
-                        <p>{reqsarr}</p>
+                        <medium>My Land Requests</medium><br />
+                        <p>{this.state.myRequestCount}</p>
                       </div>
                       <div class="detail-section">
                         <br />
@@ -247,8 +202,6 @@ class Dashboard extends Component {
                   </Col>
                 </Row>
               </div>
-            </LoadingContainer>
-          </DrizzleProvider>
                     <Row>
             <Col lg="4">
               <Card>
@@ -258,7 +211,7 @@ class Dashboard extends Component {
                 <CardBody>
                   <div className="chart-area">
 
-                    <Button href="/admin/buyerProfile" className="btn-fill" color="primary">
+                    <Button href="/buyer/profile" className="btn-fill" color="primary">
                       View Profile
                 </Button>
                   </div>
@@ -273,7 +226,7 @@ class Dashboard extends Component {
                 <CardBody>
                   <div className="chart-area">
 
-                    <Button href="/admin/OwnedLands" className="btn-fill" color="primary">
+                    <Button href="/buyer/owned-lands" className="btn-fill" color="primary">
                       View Your Lands
                 </Button>
                   </div>
@@ -288,7 +241,7 @@ class Dashboard extends Component {
                 <CardBody>
                   <div className="chart-area">
 
-                    <Button href="/admin/MakePayment" className="btn-fill" color="primary">
+                    <Button href="/buyer/payment" className="btn-fill" color="primary">
                       Make Payment
                 </Button>
                   </div>
@@ -296,13 +249,11 @@ class Dashboard extends Component {
               </Card>
             </Col>
           </Row>
-          <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-              <Row>
+          <Row>
                 <Col lg="12" md="12">
                   <Card>
                     <CardHeader>
-                      <CardTitle tag="h4">Lands Info</CardTitle>
+                      <CardTitle tag="h4">Available Lands</CardTitle>
                     </CardHeader>
                     <CardBody>
                       <Table className="tablesorter" responsive color="black">
@@ -319,7 +270,7 @@ class Dashboard extends Component {
                           </tr>
                         </thead>
                         <tbody>
-                          {row.length > 0 ? row : (
+                          {this.state.row.length > 0 ? this.state.row : (
                             <tr><td colSpan="8" style={{textAlign: "center", color: "#888"}}>No lands listed yet.</td></tr>
                           )}
                         </tbody>
@@ -328,8 +279,6 @@ class Dashboard extends Component {
                   </Card>
                 </Col>
               </Row>
-            </LoadingContainer>
-          </DrizzleProvider>
         </div>
       </>
 

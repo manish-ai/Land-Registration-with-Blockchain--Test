@@ -3,39 +3,50 @@ import ApproveTransaction from "./views/ApproveTransaction";
 import BuyerInfo from "./views/BuyerInfo";
 import SellerInfo from "./views/SellerInfo";
 import TransactionInfo from "./views/TransactionInfo";
+import AuditTrail from "./views/AuditTrail";
 
 var routes = [
   {
-    path: "/LIDashboard",
+    path: "/dashboard",
     name: "Dashboard",
-    rtlName: "لوحة القيادة",
     icon: "tim-icons icon-chart-pie-36",
     component: LIDashboard,
-    layout: "/LI",
+    layout: "/admin",
   },
   {
-    path: "/BuyerInfo",
-    name: "BuyerInfo",
-    rtlName: "لوحة القيادة",
+    path: "/buyers",
+    name: "Buyer Info",
     icon: "tim-icons icon-single-02",
     component: BuyerInfo,
-    layout: "/LI",
+    layout: "/admin",
   },
   {
-    path: "/SellerInfo",
-    name: "SellerInfo",
-    rtlName: "لوحة القيادة",
+    path: "/sellers",
+    name: "Seller Info",
     icon: "tim-icons icon-single-02",
     component: SellerInfo,
-    layout: "/LI",
+    layout: "/admin",
   },
   {
-    path: "/TransactionInfo",
-    name: "TransactionInfo",
-    rtlName: "لوحة القيادة",
+    path: "/transactions",
+    name: "Transactions",
     icon: "tim-icons icon-send",
     component: TransactionInfo,
-    layout: "/LI",
+    layout: "/admin",
+  },
+  {
+    path: "/approve",
+    name: "Approve Transfer",
+    icon: "tim-icons icon-check-2",
+    component: ApproveTransaction,
+    layout: "/admin",
+  },
+  {
+    path: "/audit",
+    name: "Audit Trail",
+    icon: "tim-icons icon-notes",
+    component: AuditTrail,
+    layout: "/admin",
   },
 ];
 export default routes;

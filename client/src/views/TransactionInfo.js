@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -40,9 +41,6 @@ const drizzleOptions = {
 }
 
 
-var landTable = [];
-var completed = true;
-
 class TransactionInfo extends Component {
     constructor(props) {
         super(props)
@@ -52,6 +50,7 @@ class TransactionInfo extends Component {
             account: null,
             web3: null,
             verified: '',
+            landTable: [],
         }
     }
 
@@ -63,13 +62,6 @@ class TransactionInfo extends Component {
             from : this.state.account,
             gas : 2100000
         });
-        //Reload
-        console.log(newOwner);
-        console.log(completed);
-        // this.setState({completed:false});
-        completed = false;
-        console.log(completed);
-
         window.location.reload(false);
 
     }
@@ -82,7 +74,7 @@ class TransactionInfo extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -91,13 +83,13 @@ class TransactionInfo extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
             
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
+            var verified = await instance.methods.isLandInspector(currentAddress).call();
             //console.log(verified);
             this.setState({ verified: verified });
             
-            var count = await this.state.LandInstance.methods.getLandsCount().call();
+            var count = await instance.methods.getLandsCount().call();
             count = parseInt(count);
             var rowsArea = [];
             var rowsCity = [];
@@ -115,28 +107,35 @@ class TransactionInfo extends Component {
                 rowsPID.push(<ContractData contract="Land" method="getPID" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
                 rowsSurvey.push(<ContractData contract="Land" method="getSurveyNumber" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
               }
-            for (var i = 0; i < count; i++) {
-                var request = await this.state.LandInstance.methods.getRequestDetails(i+1).call();
-                var approved = await this.state.LandInstance.methods.isApproved(i+1).call();
-                // console.log(approved);
-                // console.log(request[3]);
-                var disabled = request[3]&&completed;
-                console.log("Disabled: ", disabled);
-                console.log("request[3]: ", request[3]);
-                console.log("completed: ", completed);
+            var requestsCount = await instance.methods.getRequestsCount().call();
+            requestsCount = parseInt(requestsCount);
 
-                var owner = await this.state.LandInstance.methods.getLandOwner(i+1).call();
-                landTable.push(<tr><td>{i+1}</td><td>{owner}</td><td>{rowsArea[i]}</td><td>{rowsCity[i]}</td><td>{rowsState[i]}</td><td>{rowsPrice[i]}</td><td>{rowsPID[i]}</td><td>{rowsSurvey[i]}</td>
+            // Build a map from landId → request info (Bug 5 fix: requests are separate from lands)
+            const requestByLandId = {};
+            for (var r = 1; r <= requestsCount; r++) {
+                var req = await instance.methods.getRequestDetails(r).call();
+                var reqPaid = await instance.methods.isPaid(r).call();
+                // req[2] is landId
+                requestByLandId[req[2]] = { req, reqId: r, isPaid: reqPaid };
+            }
+
+            const landTable = [];
+            for (var i = 1; i <= count; i++) {
+                var reqInfo = requestByLandId[String(i)] || null;
+                var request = reqInfo ? reqInfo.req : [null, null, null, false];
+                var isPaid = reqInfo ? reqInfo.isPaid : false;
+                var disabled = request[3] && isPaid;
+
+                var owner = await instance.methods.getLandOwner(i).call();
+                landTable.push(<tr key={i}><td>{i}</td><td>{owner}</td><td>{rowsArea[i-1]}</td><td>{rowsCity[i-1]}</td><td>{rowsState[i-1]}</td><td>{rowsPrice[i-1]}</td><td>{rowsPID[i-1]}</td><td>{rowsSurvey[i-1]}</td>
                 <td>
-                     <Button onClick={this.landTransfer(i+1, request[1])} disabled={!disabled} className="button-vote">
+                     <Button onClick={this.landTransfer(i, request[1])} disabled={!disabled} className="button-vote">
                           Verify Transaction
                     </Button>
                 </td>
                 </tr>)
-
-
             }
-            this.forceUpdate();
+            this.setState({ landTable });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -210,7 +209,7 @@ class TransactionInfo extends Component {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {landTable.length > 0 ? landTable : (
+                                                {this.state.landTable.length > 0 ? this.state.landTable : (
                                                     <tr><td colSpan="9" style={{textAlign: "center", color: "#888"}}>No land transactions found.</td></tr>
                                                 )}
                                             </tbody>

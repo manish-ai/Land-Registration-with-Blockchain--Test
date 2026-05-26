@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import LandContract from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
-import ipfs from '../ipfs';
+import fileUpload from '../ipfs';
+import * as govApi from '../services/govApi';
+import { getWalletAddress } from '../services/authService';
 
 import {
   Button,
@@ -16,7 +18,7 @@ import {
   Row,
   Col,
 } from "reactstrap";
-import { Spinner,   FormFile} from 'react-bootstrap';
+import { Spinner, FormFile } from 'react-bootstrap';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 
 
@@ -42,6 +44,10 @@ class AddLand extends Component {
       surveyNum: '',
       buffer2: null,
       document: '',
+      govLandData: null,
+      landLookupDone: false,
+      hasEncumbrance: false,
+      hasLitigation: false,
     }
     this.captureFile = this.captureFile.bind(this);
     this.addimage = this.addimage.bind(this);
@@ -63,14 +69,14 @@ class AddLand extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      const currentAddress = accounts[0];
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+      const currentAddress = getWalletAddress();
       console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      var verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+      var verified = await instance.methods.isVerified(currentAddress).call();
       console.log(verified);
       this.setState({ verified: verified });
-      var registered = await this.state.LandInstance.methods.isSeller(currentAddress).call();
+      var registered = await instance.methods.isSeller(currentAddress).call();
       console.log(registered);
       this.setState({ registered: registered });
 
@@ -84,62 +90,95 @@ class AddLand extends Component {
     }
   };
 
-  addimage = async () => {
-    // alert('In add image')
-    await ipfs.files.add(this.state.buffer, (error, result) => {
-      if (error) {
-        alert(error)
-        return
-      }
+  lookupLand = async () => {
+    if (!this.state.propertyPID) {
+      alert("Please enter a Property PID first.");
+      return;
+    }
+    const result = await govApi.lookupLand(this.state.propertyPID);
+    if (result.found) {
+      this.setState({
+        govLandData: result,
+        landLookupDone: true,
+        area: result.record.area ? String(result.record.area) : this.state.area,
+        city: result.record.city || this.state.city,
+        stateLoc: result.record.state || this.state.stateLoc,
+        surveyNum: result.record.survey_number || this.state.surveyNum,
+        hasEncumbrance: result.record.has_encumbrance || false,
+        hasLitigation: result.record.has_litigation || false,
+      });
+    } else {
+      this.setState({ govLandData: result, landLookupDone: true, hasEncumbrance: false, hasLitigation: false });
+      alert(result.message || "Land not found in government records.");
+    }
+  }
 
-      alert(result[0].hash)
-      this.setState({ ipfsHash: result[0].hash });
-      console.log('ipfsHash:', this.state.ipfsHash);
-    })
+  addimage = async () => {
+    if (!this.state.buffer) {
+      console.log('No image selected, skipping upload');
+      this.setState({ ipfsHash: '' });
+      return;
+    }
+    try {
+      const result = await fileUpload.upload(this.state.buffer);
+      this.setState({ ipfsHash: result.fileId || '' });
+      console.log('ipfsHash:', result.fileId);
+    } catch (e) {
+      console.error('File upload failed:', e.message);
+      this.setState({ ipfsHash: '' });
+    }
   }
   addDoc = async () => {
-    // alert('In add image')
-    await ipfs.files.add(this.state.buffer2, (error, result) => {
-      if (error) {
-        alert(error)
-        return
-      }
-
-      alert(result[0].hash)
-      this.setState({ document: result[0].hash });
-      console.log('document:', this.state.document);
-    })
+    if (!this.state.buffer2) {
+      console.log('No document selected, skipping upload');
+      this.setState({ document: '' });
+      return;
+    }
+    try {
+      const result = await fileUpload.upload(this.state.buffer2);
+      this.setState({ document: result.fileId || '' });
+      console.log('document:', result.fileId);
+    } catch (e) {
+      console.error('File upload failed:', e.message);
+      this.setState({ document: '' });
+    }
   }
 
-  //QmYdztkcPJLmGmwLmM4nyBfVatoBMRDuUjmgBupjmTodAP
   addLand = async () => {
-    this.addimage();
-    this.addDoc();
-    // alert('After add image')
-    await new Promise(resolve => setTimeout(resolve, 15000));
+    await this.addimage();
+    await this.addDoc();
     if (this.state.area == '' || this.state.city == '' || this.state.stateLoc == '' || this.state.price == '' || this.state.propertyPID == '' || this.state.surveyNum == '') {
       alert("All the fields are compulsory!");
     } else if ((!Number(this.state.area)) || (!Number(this.state.price))) {
       alert("Land area and Price of Land must be a number!");
+    } else if (this.state.hasEncumbrance || this.state.hasLitigation) {
+      alert("Cannot register: this land has encumbrance or litigation issues!");
     } else {
+      // Check for duplicates in govt records
+      const dupCheck = await govApi.checkDuplicate(this.state.propertyPID, this.state.surveyNum);
+      if (dupCheck.isDuplicate) {
+        alert("This land is already registered in government records!");
+        return;
+      }
+
       await this.state.LandInstance.methods.addLand(
         this.state.area,
         this.state.city,
         this.state.stateLoc,
-        this.state.price, 
+        this.state.price,
         this.state.propertyPID,
         this.state.surveyNum,
-        this.state.ipfsHash, 
+        this.state.ipfsHash,
         this.state.document)
         .send({
           from: this.state.account,
           gas: 2100000
-        }).then(response => {
-          this.props.history.push("/Seller/SellerDashboard");
+        }).then(async (response) => {
+          // Mark as registered in govt records
+          const txHash = response.transactionHash || '';
+          await govApi.markRegistered(this.state.propertyPID, txHash);
+          window.location.href = "/seller/dashboard";
         });
-
-      //Reload
-      window.location.reload(false);
     }
   }
   // _city,string  _state, uint landPrice, uint _propertyPID,uint _surveyNum,string memory _ipfsHash
@@ -294,6 +333,17 @@ class AddLand extends Component {
                           value={this.state.propertyPID}
                           onChange={this.updatePID}
                         />
+                        <Button color="info" size="sm" style={{marginTop: '5px'}} onClick={this.lookupLand}>
+                          Lookup in Govt Records
+                        </Button>
+                        {this.state.govLandData && this.state.govLandData.found && (
+                          <span style={{marginLeft: '10px', color: 'green', fontWeight: 'bold'}}>Land found in records</span>
+                        )}
+                        {(this.state.hasEncumbrance || this.state.hasLitigation) && (
+                          <div style={{color: 'red', fontWeight: 'bold', marginTop: '5px'}}>
+                            WARNING: This land has {this.state.hasEncumbrance ? 'encumbrance' : ''}{this.state.hasEncumbrance && this.state.hasLitigation ? ' and ' : ''}{this.state.hasLitigation ? 'litigation' : ''} issues. Registration is disabled.
+                          </div>
+                        )}
                       </FormGroup>
                     </Col>
                   </Row>
@@ -335,7 +385,7 @@ class AddLand extends Component {
                 </Form>
               </CardBody>
               <CardFooter>
-                <Button className="btn-fill" color="primary" onClick={this.addLand}>
+                <Button className="btn-fill" color="primary" onClick={this.addLand} disabled={this.state.hasEncumbrance || this.state.hasLitigation}>
                   Add Land
                 </Button>
               </CardFooter>

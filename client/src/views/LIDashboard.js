@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -60,7 +61,7 @@ class LIDashboard extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
             const instance = new web3.eth.Contract(
@@ -68,9 +69,9 @@ class LIDashboard extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-            var verified = await this.state.LandInstance.methods.isLandInspector(currentAddress).call();
+            var verified = await instance.methods.isLandInspector(currentAddress).call();
             this.setState({ verified: verified });
 
             sellerarr.push(<ContractData contract="Land" method="getSellersCount" />);
@@ -175,7 +176,7 @@ class LIDashboard extends Component {
                                     <CardBody>
                                         <div className="chart-area">
 
-                                            <Button href="/LI/BuyerInfo" className="btn-fill" color="primary">
+                                            <Button href="/admin/buyers" className="btn-fill" color="primary">
                                                 Verify Buyers
                 </Button>
                                         </div>
@@ -190,7 +191,7 @@ class LIDashboard extends Component {
                                     <CardBody>
                                         <div className="chart-area">
 
-                                            <Button href="/LI/TransactionInfo" className="btn-fill" color="primary">
+                                            <Button href="/admin/transactions" className="btn-fill" color="primary">
                                                 Approve Land Transactions
                         </Button>
                                         </div>
@@ -205,7 +206,7 @@ class LIDashboard extends Component {
                                     <CardBody>
                                         <div className="chart-area">
 
-                                            <Button href="/LI/SellerInfo" className="btn-fill" color="primary">
+                                            <Button href="/admin/sellers" className="btn-fill" color="primary">
                                                 Verify Sellers
                 </Button>
                                         </div>

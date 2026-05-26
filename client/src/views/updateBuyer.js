@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import "../index.css";
 import { FormControl } from "react-bootstrap";
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -31,10 +32,6 @@ const drizzleOptions = {
     contracts: [Land]
 }
 
-var buyer;
-var buyerTable = [];
-var verification = [];
-
 class updateBuyer extends Component {
     constructor(props) {
         super(props)
@@ -44,15 +41,12 @@ class updateBuyer extends Component {
             account: null,
             web3: null,
             address: '',
-            buyers: 0,
-            sellers: 0,
             name: '',
             age: '',
             city: '',
             email: '',
-            aadharNumber: '',
-            panNumber: '',
-            verified: '',
+            verification: null,
+            buyerTable: null,
         }
     }
 
@@ -63,7 +57,7 @@ class updateBuyer extends Component {
 
             const accounts = await web3.eth.getAccounts();
 
-            const currentAddress = accounts[0];
+            const currentAddress = getWalletAddress();
             console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -72,24 +66,23 @@ class updateBuyer extends Component {
                 deployedNetwork && deployedNetwork.address,
             );
 
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
             this.setState({address: currentAddress});
-            var buyer_verify = await this.state.LandInstance.methods.isVerified(currentAddress).call();
-                
-            var not_verify = await this.state.LandInstance.methods.isRejected(currentAddress).call();
+            var buyer_verify = await instance.methods.isVerified(currentAddress).call();
+            var not_verify = await instance.methods.isRejected(currentAddress).call();
+            let verificationEl;
             if(buyer_verify){
-              verification.push(<p id = "verified">Verified <i class="fas fa-user-check"></i></p>);
+              verificationEl = <p id="verified">Verified <i className="fas fa-user-check"></i></p>;
             }else if(not_verify){
-              verification.push(<p  id = "rejected">Rejected <i class="fas fa-user-times"></i></p>);
+              verificationEl = <p id="rejected">Rejected <i className="fas fa-user-times"></i></p>;
             }else{
-              verification.push(<p id = "unknown">Not Yet Verified <i class="fas fa-user-cog"></i></p>);
+              verificationEl = <p id="unknown">Not Yet Verified <i className="fas fa-user-cog"></i></p>;
             }
 
-            buyer = await this.state.LandInstance.methods.getBuyerDetails(currentAddress).call();
+            const buyer = await instance.methods.getBuyerDetails(currentAddress).call();
             console.log(buyer);
             console.log(buyer[0]);
-            this.setState({name: buyer[0], age: buyer[5], city: buyer[1], email: buyer[4], aadharNumber: buyer[6], panNumber: buyer[2]});
-            buyerTable.push(
+            const buyerTableEl = (
             <Row>
                 <Col md="12">
                   <FormGroup>
@@ -103,6 +96,7 @@ class updateBuyer extends Component {
                 </Col>
               </Row>
               );
+            this.setState({name: buyer[0], age: buyer[1], city: buyer[2], email: buyer[3], buyerTable: buyerTableEl, verification: verificationEl });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -113,33 +107,24 @@ class updateBuyer extends Component {
         }
     };
     updateBuyer = async () => {
-      if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.email == '' || this.state.aadharNumber == '' || this.state.panNumber == '') {
+      if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.email == '') {
           alert("All the fields are compulsory!");
-      } else if(this.state.aadharNumber.length != 12){
-          alert("Aadhar Number should be 12 digits long!");
-      } else if(this.state.panNumber.length != 10){
-          alert("Pan Number should be a 10 digit unique number!");
       } else if (!Number(this.state.age)) {
           alert("Your age must be a number");
-      } 
+      }
       else{
           await this.state.LandInstance.methods.updateBuyer(
               this.state.name,
               this.state.age,
               this.state.city,
-              this.state.aadharNumber,
-              this.state.email,
-              this.state.panNumber
+              this.state.email
               )
               .send({
                   from : this.state.address,
                   gas : 2100000
-              }).then(response => {
-                  this.props.history.push("/admin/buyerProfile");
+              }).then(() => {
+                  window.location.href = "/buyer/profile";
               });
-
-          //Reload
-          window.location.reload(false);
       }
   }
 
@@ -155,13 +140,6 @@ class updateBuyer extends Component {
   updateEmail = event => (
       this.setState({ email: event.target.value })
   )
-  updateAadhar = event => (
-      this.setState({ aadharNumber: event.target.value })
-  )
-  updatePan = event => (
-      this.setState({ panNumber: event.target.value })
-  )
-
     render() {
         if (!this.state.web3) {
             return (
@@ -185,12 +163,12 @@ class updateBuyer extends Component {
                     <Card>
                       <CardHeader>
                         <h5 className="title">Buyer Profile</h5>
-                        <h5 className="title">{verification}</h5>
+                        <h5 className="title">{this.state.verification}</h5>
 
                       </CardHeader>
                       <CardBody>
                         <Form>
-                          {buyerTable}
+                          {this.state.buyerTable}
                           <Row>
                             <Col md="12">
                               <FormGroup>
@@ -237,30 +215,6 @@ class updateBuyer extends Component {
                                   type="text"
                                   value={this.state.city}
                                   onChange={this.updateCity}
-                                />
-                              </FormGroup>
-                            </Col>
-                          </Row>
-                          <Row>
-                            <Col md="12">
-                              <FormGroup>
-                                <label>Aadhar Number</label>
-                                <Input
-                                  type="text"
-                                  value={this.state.aadharNumber}
-                                  onChange={this.updateAadhar}
-                                />
-                              </FormGroup>
-                            </Col>
-                          </Row>
-                          <Row>
-                            <Col md="12">
-                              <FormGroup>
-                                <label>Pan Number</label>
-                                <Input
-                                  type="text"
-                                  value={this.state.panNumber}
-                                  onChange={this.updatePan}
                                 />
                               </FormGroup>
                             </Col>

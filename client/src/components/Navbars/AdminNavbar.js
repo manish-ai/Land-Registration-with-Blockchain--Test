@@ -82,11 +82,23 @@ function AdminNavbar(props) {
           </NavbarToggler>
           <Collapse navbar isOpen={collapseOpen}>
             <Nav className="ml-auto" navbar>
-            <a href ="/Help" className="faq" style={{borderRadius: "10%", textDecoration: "none", fontWeight: "bolder"}} >
-                 <h3 style={{color: "black"}}>Help?</h3>
-              </a>
-              
-              
+              {props.userName && (
+                <li className="nav-item" style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
+                  <span style={{ color: '#344675', fontSize: 14, fontWeight: 600 }}>
+                    {props.userName}
+                  </span>
+                </li>
+              )}
+              {props.onLogout && (
+                <li className="nav-item">
+                  <button
+                    onClick={props.onLogout}
+                    style={{ marginRight: 8, fontSize: 13, background: '#e14eca', color: '#fff', border: 'none', borderRadius: 4, padding: '5px 14px', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Logout
+                  </button>
+                </li>
+              )}
               <li className="separator d-lg-none" />
             </Nav>
           </Collapse>

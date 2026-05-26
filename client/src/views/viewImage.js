@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
+import { getWalletAddress } from '../services/authService';
 import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner  } from 'react-bootstrap';
 import {
@@ -37,9 +38,6 @@ const drizzleOptions = {
   contracts: [Land]
 }
 
-var verified;
-var row = [];
-var rowsIpfs = [];
 
 class viewImage extends Component {
   constructor(props) {
@@ -49,20 +47,9 @@ class viewImage extends Component {
       LandInstance: undefined,
       account: null,
       web3: null,
-      flag: null,
-      verified: '',
-      registered: '',
-      count: 0,
-      id: '',
+      row: [],
     }
   }
-
-  viewImage = (landId) => {
-    alert(landId);
-    this.props.history.push({
-        pathname: '/viewImage',
-      })
-}
 
   componentDidMount = async () => {
 
@@ -80,16 +67,11 @@ class viewImage extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      const currentAddress = accounts[0];
+      const currentAddress = getWalletAddress();
       console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
-      console.log(verified);
-      this.setState({ verified: verified });
-      var registered = true;
-      this.setState({ registered: registered });
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-      var count = await this.state.LandInstance.methods.getLandsCount().call();
+      var count = await instance.methods.getLandsCount().call();
       count = parseInt(count);
       console.log(typeof (count));
       console.log(count);
@@ -102,8 +84,6 @@ class viewImage extends Component {
       var rowsPrice = [];
       var rowsPID = [];
       var rowsSurvey = [];
-      var rowsIpfs = [];
-      var rowsDocs = [];
 
       for (var i = 1; i < count + 1; i++) {
         rowsArea.push(<ContractData contract="Land" method="getArea" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
@@ -117,37 +97,29 @@ class viewImage extends Component {
       }
       
 
+      const landRow = [];
       for (var i = 1; i < count + 1; i++) {
-        var landImg = await this.state.LandInstance.methods.getImage(i).call();
-        rowsIpfs.push(landImg)
-        var document = await this.state.LandInstance.methods.getDocument(i).call();
-        rowsDocs.push(document);
-        // row.push(<> <Col xs="6"><Card style={{textAlign: "center"}}>
-        //   <CardHeader><CardTitle><h2>Land {i}</h2></CardTitle></CardHeader>
-        // <CardBody><div><img src={`https://ipfs.io/ipfs/${landImg}`} alt="" width="90%" height="90%" style={{marginBottom:"10px"}}/><p>Area: {rowsArea[i-1]}</p><p>City: {rowsCity[i-1]}</p><p>State: {rowsState[i-1]}</p><p>PID: {rowsPID[i-1]}</p><p>Price: {rowsPrice[i-1]}</p> 
-        // </div></CardBody></Card></Col></>)
-        row.push(<Col xs="6">
-     
-        <div class="post-module">
-          
-          <div class="thumbnail">
-            <div class="date">
-            <div class="day">{i}</div>
-            </div><img src={`https://ipfs.io/ipfs/${landImg}`}/>
+        var landImg = await instance.methods.getImage(i).call();
+        var document = await instance.methods.getDocument(i).call();
+        landRow.push(<Col key={i} xs="6">
+        <div className="post-module">
+          <div className="thumbnail">
+            <div className="date">
+            <div className="day">{i}</div>
+            </div><img src={`http://localhost:4002/api/files/${landImg}`} alt="land"/>
           </div>
-          
-          <div class="post-content">
-            <div class="category">Photos</div>
-            <h1 class="title">{rowsArea[i-1]} Sq. m.</h1>
-            <h2 class="sub_title">{rowsCity[i-1]}, {rowsState[i-1]}</h2>
-            <p class="description">PID: {rowsPID[i-1]}<br/> Survey No.: {rowsSurvey[i-1]}</p>
-      <div class="post-meta"><span class="timestamp">Price: ₹ {rowsPrice[i-1]}</span></div>
-      <div class="post-meta"><span class="timestamp">View Verified Land  <a href={`https://ipfs.io/ipfs/${document}`} target="_blank">Document</a></span></div>
+          <div className="post-content">
+            <div className="category">Photos</div>
+            <h1 className="title">{rowsArea[i-1]} Sq. m.</h1>
+            <h2 className="sub_title">{rowsCity[i-1]}, {rowsState[i-1]}</h2>
+            <p className="description">PID: {rowsPID[i-1]}<br/> Survey No.: {rowsSurvey[i-1]}</p>
+            <div className="post-meta"><span className="timestamp">Price: ₹ {rowsPrice[i-1]}</span></div>
+            <div className="post-meta"><span className="timestamp">View Verified Land  <a href={`http://localhost:4002/api/files/${document}`} target="_blank">Document</a></span></div>
           </div>
         </div>
       </Col>)
       }
-      console.log(row)
+      this.setState({ row: landRow });
 
       
 
@@ -174,28 +146,6 @@ class viewImage extends Component {
       );
     }
 
-    if (!this.state.registered || !this.state.verified) {
-      return (
-        <div className="content">
-          <div>
-            <Row>
-              <Col xs="6">
-                <Card>
-                  <CardBody>
-                    <h1>
-                      You are not verified to view this page
-                                        </h1>
-                  </CardBody>
-                </Card>
-              </Col>
-            </Row>
-          </div>
-
-        </div>
-      );
-    }
-
-
     return (
       <>
         <div className="content">
@@ -204,12 +154,12 @@ class viewImage extends Component {
 
               <Row>
 
-                {row}
+                {this.state.row}
 
               </Row>
             </LoadingContainer>
           </DrizzleProvider>
-          
+
         </div>
       </>
 

@@ -1,48 +1,22 @@
 import React, { Component } from 'react';
-import { Line, Bar } from "react-chartjs-2";
-import LandContract from "../artifacts/Land.json";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
-import { Spinner  } from 'react-bootstrap';
-import {  Link} from 'react-router-dom';
-import {
-  LoadingContainer,
-  AccountData,
-  ContractData,
-  ContractForm
-} from '../drizzle-shims/drizzle-react-components';
-
-import viewImage from './viewImage';
-
-// reactstrap components
+import { getWalletAddress } from '../services/authService';
+import { Spinner } from 'react-bootstrap';
 import {
   Button,
-  ButtonGroup,
   Card,
   CardHeader,
   CardBody,
   CardTitle,
-  Input,
   Table,
   Row,
   Col,
-  UncontrolledTooltip,
 } from "reactstrap";
 
 import "../card.css";
 import "../index.css";
 
-const drizzleOptions = {
-  contracts: [Land]
-}
-
-
-var verified;
-var row = [];
-var countarr = [];
-var userarr = [];
-var reqsarr = [];
 
 class SDash extends Component {
   constructor(props) {
@@ -52,11 +26,11 @@ class SDash extends Component {
       LandInstance: undefined,
       account: null,
       web3: null,
-      flag: null,
       verified: '',
       registered: '',
-      count: 0,
-      id: '',
+      row: [],
+      myLandCount: 0,
+      myRequestCount: 0,
     }
   }
 
@@ -81,51 +55,45 @@ class SDash extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      const currentAddress = accounts[0];
+      const currentAddress = getWalletAddress();
       console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: accounts[0] });
-      verified = await this.state.LandInstance.methods.isVerified(currentAddress).call();
+      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+      var verified = await instance.methods.isVerified(currentAddress).call();
       console.log(verified);
       this.setState({ verified: verified });
-      var registered = await this.state.LandInstance.methods.isSeller(currentAddress).call();
+      var registered = await instance.methods.isSeller(currentAddress).call();
       console.log(registered);
       this.setState({ registered: registered });
 
-      var count = await this.state.LandInstance.methods.getLandsCount().call();
-      count = parseInt(count);
-      console.log(typeof (count));
-      console.log(count);
-      //this.setState({count:count});
+      var totalCount = await instance.methods.getLandsCount().call();
+      totalCount = parseInt(totalCount);
 
-      countarr.push(<ContractData contract="Land" method="getLandsCount" />);
-      userarr.push(<ContractData contract="Land" method="getBuyersCount" />);
-      reqsarr.push(<ContractData contract="Land" method="getRequestsCount" />);
-
-      var rowsArea = [];
-      var rowsCity = [];
-      var rowsState = [];
-      var rowsPrice = [];
-      var rowsPID = [];
-      var rowsSurvey = [];
-      
-
-      for (var i = 1; i < count + 1; i++) {
-        rowsArea.push(<ContractData contract="Land" method="getArea" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsCity.push(<ContractData contract="Land" method="getCity" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsState.push(<ContractData contract="Land" method="getState" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPrice.push(<ContractData contract="Land" method="getPrice" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPID.push(<ContractData contract="Land" method="getPID" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsSurvey.push(<ContractData contract="Land" method="getSurveyNumber" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
+      // Only show this seller's own lands
+      const row = [];
+      let myLandCount = 0;
+      for (var i = 1; i <= totalCount; i++) {
+        var owner = await instance.methods.getLandOwner(i).call();
+        if (owner.toLowerCase() !== currentAddress.toLowerCase()) continue;
+        myLandCount++;
+        var area = await instance.methods.getArea(i).call();
+        var city = await instance.methods.getCity(i).call();
+        var state = await instance.methods.getState(i).call();
+        var price = await instance.methods.getPrice(i).call();
+        var pid = await instance.methods.getPID(i).call();
+        var survey = await instance.methods.getSurveyNumber(i).call();
+        row.push(<tr key={i}><td>{myLandCount}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{price}</td><td>{pid}</td><td>{survey}</td></tr>);
       }
-    
 
-      for (var i = 0; i < count; i++) {
-        row.push(<tr><td>{i + 1}</td><td>{rowsArea[i]}</td><td>{rowsCity[i]}</td><td>{rowsState[i]}</td><td>{rowsPrice[i]}</td><td>{rowsPID[i]}</td><td>{rowsSurvey[i]}</td>
-        </tr>)
-
+      // Count requests for this seller's lands
+      var requestsCount = await instance.methods.getRequestsCount().call();
+      requestsCount = parseInt(requestsCount);
+      let myRequestCount = 0;
+      for (var r = 1; r <= requestsCount; r++) {
+        var req = await instance.methods.getRequestDetails(r).call();
+        if (req[0].toLowerCase() === currentAddress.toLowerCase()) myRequestCount++;
       }
-      console.log(row);
-      this.forceUpdate();
+
+      this.setState({ row, myLandCount, myRequestCount });
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -175,27 +143,14 @@ class SDash extends Component {
     return (
       <>
         <div className="content">
-        <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-              <div className="main-section">
+          <div className="main-section">
                 <Row>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-skyblue">
-                      <div class="icon-section">
-                        <i class="fa fa-users" aria-hidden="true"></i><br />
-                        <medium>Total Buyers</medium><br />
-                       <p> {userarr} </p>
-                      </div>
-                      <div class="detail-section"><br />
-                      </div>
-                    </div>
-                  </Col>
                   <Col lg="4">
                     <div class="dashbord dashbord-orange">
                       <div class="icon-section">
                         <i class="fa fa-landmark" aria-hidden="true"></i><br />
-                        <medium>Registered Lands Count</medium><br />
-                        <p>{countarr}</p>
+                        <medium>My Listed Lands</medium><br />
+                        <p>{this.state.myLandCount}</p>
                       </div>
                       <div class="detail-section"><br />
                       </div>
@@ -205,8 +160,8 @@ class SDash extends Component {
                     <div class="dashbord dashbord-blue">
                       <div class="icon-section">
                         <i class="fa fa-bell" aria-hidden="true"></i><br />
-                        <medium>Total Requests</medium><br />
-                        <p>{reqsarr}</p>
+                        <medium>Requests for My Lands</medium><br />
+                        <p>{this.state.myRequestCount}</p>
                       </div>
                       <div class="detail-section">
                         <br />
@@ -215,8 +170,6 @@ class SDash extends Component {
                   </Col>
                 </Row>
               </div>
-            </LoadingContainer>
-          </DrizzleProvider>
           <Row>
             <Col lg="4">
               <Card>
@@ -226,7 +179,7 @@ class SDash extends Component {
                 <CardBody>
                   <div className="chart-area">
 
-                    <Button href="/Seller/AddLand" disabled={!this.state.verified} className="btn-fill" color="primary">
+                    <Button href="/seller/add-land" disabled={!this.state.verified} className="btn-fill" color="primary">
                       Add Land
                 </Button>
                   </div>
@@ -256,7 +209,7 @@ class SDash extends Component {
                 <CardBody>
                   <div className="chart-area">
 
-                    <Button href="/Seller/ApproveRequest" disabled={!this.state.verified} className="btn-fill" color="primary">
+                    <Button href="/seller/requests" disabled={!this.state.verified} className="btn-fill" color="primary">
                       View all Land Requests
                         </Button>
                   </div>
@@ -265,20 +218,17 @@ class SDash extends Component {
             </Col>
           </Row>
          
-          <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-              <Row>
+          <Row>
                 <Col lg="12" md="12">
                   <Card>
                     <CardHeader>
-                      <CardTitle tag="h4">Lands Info
-                      </CardTitle>
+                      <CardTitle tag="h4">My Lands</CardTitle>
                     </CardHeader>
                     <CardBody>
                       <Table className="tablesorter" responsive color="black">
                         <thead className="text-primary">
                           <tr>
-                          <th>#</th>
+                            <th>#</th>
                             <th>Area</th>
                             <th>City</th>
                             <th>State</th>
@@ -288,7 +238,7 @@ class SDash extends Component {
                           </tr>
                         </thead>
                         <tbody>
-                          {row.length > 0 ? row : (
+                          {this.state.row.length > 0 ? this.state.row : (
                             <tr><td colSpan="7" style={{textAlign: "center", color: "#888"}}>No lands added yet.</td></tr>
                           )}
                         </tbody>
@@ -297,8 +247,6 @@ class SDash extends Component {
                   </Card>
                 </Col>
               </Row>
-            </LoadingContainer>
-          </DrizzleProvider>
           <Row>
             <Col lg="4">
               <Card>
@@ -306,7 +254,7 @@ class SDash extends Component {
                   <CardTitle>View Images of all Lands!</CardTitle>
                 </CardHeader>
                 <CardBody>
-                    <Button href="/Seller/viewImage" className="btn-fill" color="primary">
+                    <Button href="/seller/gallery" className="btn-fill" color="primary">
                       View Images
                 </Button>
                 </CardBody>
