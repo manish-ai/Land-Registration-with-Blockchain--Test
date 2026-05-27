@@ -1,11 +1,16 @@
 const GOV_API = 'http://localhost:4002/api';
 
 const fileUpload = {
-    upload: async (buffer) => {
+    upload: async (fileOrBuffer) => {
         try {
             const formData = new FormData();
-            const blob = new Blob([buffer]);
-            formData.append('file', blob);
+            if (fileOrBuffer instanceof File) {
+                formData.append('file', fileOrBuffer, fileOrBuffer.name);
+            } else {
+                // Legacy buffer support
+                const blob = new Blob([fileOrBuffer]);
+                formData.append('file', blob, 'upload.bin');
+            }
             const res = await fetch(`${GOV_API}/files/upload`, {
                 method: 'POST',
                 body: formData

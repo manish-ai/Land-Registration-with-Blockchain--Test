@@ -1,133 +1,48 @@
 import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
-import { getWalletAddress } from '../services/authService';
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
-import { Spinner  } from 'react-bootstrap';
-import {
-  LoadingContainer,
-  AccountData,
-  ContractData,
-  ContractForm
-} from '../drizzle-shims/drizzle-react-components';
+import { Spinner } from 'react-bootstrap';
+import { Row, Col, Card, CardBody } from 'reactstrap';
 import "../index.css";
 
-// reactstrap components
-import {
-  Button,
-  ButtonGroup,
-  Card,
-  CardHeader,
-  CardBody,
-  CardTitle,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
-  UncontrolledDropdown,
-  Label,
-  FormGroup,
-  Input,
-  Table,
-  Row,
-  Col,
-  UncontrolledTooltip,
-} from "reactstrap";
+const GOV_FILES = 'http://localhost:4002/api/files';
 
-
-const drizzleOptions = {
-  contracts: [Land]
-}
-
-
-class viewImage extends Component {
+class LandGallery extends Component {
   constructor(props) {
-    super(props)
-
+    super(props);
     this.state = {
-      LandInstance: undefined,
-      account: null,
       web3: null,
-      row: [],
-    }
+      lands: [],
+    };
   }
 
   componentDidMount = async () => {
-
-
     try {
-      //Get network provider and web3 instance
       const web3 = await getWeb3();
-
-      const accounts = await web3.eth.getAccounts();
-
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = Land.networks[networkId];
       const instance = new web3.eth.Contract(
         Land.abi,
         deployedNetwork && deployedNetwork.address,
       );
+      this.setState({ web3 });
 
-      const currentAddress = getWalletAddress();
-      console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
-
-      var count = await instance.methods.getLandsCount().call();
-      count = parseInt(count);
-      console.log(typeof (count));
-      console.log(count);
-      //this.setState({count:count});
-
-      var rowsArea = [];
-      var rowsCity = [];
-      var rowsState = [];
-      var rowsSt = [];
-      var rowsPrice = [];
-      var rowsPID = [];
-      var rowsSurvey = [];
-
-      for (var i = 1; i < count + 1; i++) {
-        rowsArea.push(<ContractData contract="Land" method="getArea" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsCity.push(<ContractData contract="Land" method="getCity" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsState.push(<ContractData contract="Land" method="getState" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsSt.push(<ContractData contract="Land" method="getStatus" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPrice.push(<ContractData contract="Land" method="getPrice" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsPID.push(<ContractData contract="Land" method="getPID" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-        rowsSurvey.push(<ContractData contract="Land" method="getSurveyNumber" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-      // rowsIpfs.push((<ContractData contract="Land" method="getImage"  methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />));
+      const count = parseInt(await instance.methods.getLandsCount().call());
+      const lands = [];
+      for (let i = 1; i <= count; i++) {
+        const area     = await instance.methods.getArea(i).call();
+        const city     = await instance.methods.getCity(i).call();
+        const state    = await instance.methods.getState(i).call();
+        const price    = await instance.methods.getPrice(i).call();
+        const pid      = await instance.methods.getPID(i).call();
+        const survey   = await instance.methods.getSurveyNumber(i).call();
+        const landImg  = await instance.methods.getImage(i).call();
+        const document = await instance.methods.getDocument(i).call();
+        lands.push({ id: i, area, city, state, price, pid, survey, landImg, document });
       }
-      
-
-      const landRow = [];
-      for (var i = 1; i < count + 1; i++) {
-        var landImg = await instance.methods.getImage(i).call();
-        var document = await instance.methods.getDocument(i).call();
-        landRow.push(<Col key={i} xs="6">
-        <div className="post-module">
-          <div className="thumbnail">
-            <div className="date">
-            <div className="day">{i}</div>
-            </div><img src={`http://localhost:4002/api/files/${landImg}`} alt="land"/>
-          </div>
-          <div className="post-content">
-            <div className="category">Photos</div>
-            <h1 className="title">{rowsArea[i-1]} Sq. m.</h1>
-            <h2 className="sub_title">{rowsCity[i-1]}, {rowsState[i-1]}</h2>
-            <p className="description">PID: {rowsPID[i-1]}<br/> Survey No.: {rowsSurvey[i-1]}</p>
-            <div className="post-meta"><span className="timestamp">Price: ₹ {rowsPrice[i-1]}</span></div>
-            <div className="post-meta"><span className="timestamp">View Verified Land  <a href={`http://localhost:4002/api/files/${document}`} target="_blank">Document</a></span></div>
-          </div>
-        </div>
-      </Col>)
-      }
-      this.setState({ row: landRow });
-
-      
-
+      this.setState({ lands });
     } catch (error) {
-      // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
+      alert('Failed to load land gallery. Check console for details.');
       console.error(error);
     }
   };
@@ -135,37 +50,81 @@ class viewImage extends Component {
   render() {
     if (!this.state.web3) {
       return (
-        <div>
-          <div>
-            <h1>
-              <Spinner animation="border" variant="primary" />
-            </h1>
-          </div>
-
+        <div className="content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <Spinner animation="border" variant="primary" />
         </div>
       );
     }
 
+    const { lands } = this.state;
+
     return (
-      <>
-        <div className="content">
-          <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-
-              <Row>
-
-                {this.state.row}
-
-              </Row>
-            </LoadingContainer>
-          </DrizzleProvider>
-
-        </div>
-      </>
-
+      <div className="content">
+        <h4 style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 20 }}>Land Gallery</h4>
+        {lands.length === 0 ? (
+          <Card>
+            <CardBody style={{ textAlign: 'center', color: '#888', padding: 40 }}>
+              No lands listed yet.
+            </CardBody>
+          </Card>
+        ) : (
+          <Row>
+            {lands.map(land => (
+              <Col key={land.id} lg="4" md="6" style={{ marginBottom: 24 }}>
+                <Card style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e8ecf0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', height: '100%' }}>
+                  {land.landImg ? (
+                    <img
+                      src={`${GOV_FILES}/${land.landImg}`}
+                      alt={`Land ${land.id}`}
+                      style={{ width: '100%', height: 180, objectFit: 'cover' }}
+                      onError={e => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div style={{
+                    width: '100%', height: 180, background: '#f4f5f7',
+                    display: land.landImg ? 'none' : 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    color: '#aaa', fontSize: 13,
+                  }}>
+                    No Image
+                  </div>
+                  <CardBody style={{ padding: '16px 20px' }}>
+                    <div style={{ marginBottom: 6 }}>
+                      <span style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>
+                        ₹{parseInt(land.price).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 14, color: '#374151', fontWeight: 600, marginBottom: 4 }}>
+                      {land.area} sq ft &nbsp;·&nbsp; {land.city}, {land.state}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>
+                      PID: {land.pid}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
+                      Survey No.: {land.survey}
+                    </div>
+                    {land.document && (
+                      <a
+                        href={`${GOV_FILES}/${land.document}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: 13, color: '#1a5276', fontWeight: 600 }}
+                      >
+                        View Land Document →
+                      </a>
+                    )}
+                  </CardBody>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
+      </div>
     );
-
   }
 }
 
-export default viewImage;
+export default LandGallery;

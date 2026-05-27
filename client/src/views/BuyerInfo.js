@@ -155,14 +155,18 @@ class BuyerInfo extends Component {
                     <td><a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
                     <td>{statusBadge}</td>
                     <td>
-                        <Button onClick={this.verifyBuyer(buyersMap[i])} disabled={buyer_verify || not_verify} size="sm" color="success">
-                            Verify
-                        </Button>
+                        {!buyer_verify && !not_verify && (
+                            <Button onClick={this.verifyBuyer(buyersMap[i])} size="sm" color="success">
+                                Verify
+                            </Button>
+                        )}
                     </td>
                     <td>
-                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[3], buyer[0])} disabled={buyer_verify || not_verify} size="sm" color="danger">
-                            Reject
-                        </Button>
+                        {!buyer_verify && !not_verify && (
+                            <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[3], buyer[0])} size="sm" color="danger">
+                                Reject
+                            </Button>
+                        )}
                     </td>
                 </tr>)
 

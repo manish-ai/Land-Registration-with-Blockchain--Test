@@ -4,23 +4,59 @@ import getWeb3 from "../getWeb3";
 import fileUpload from '../ipfs';
 import * as govApi from '../services/govApi';
 import { getWalletAddress } from '../services/authService';
-
 import {
   Button,
   Card,
   CardHeader,
   CardBody,
   CardFooter,
-  CardText,
   FormGroup,
   Form,
   Input,
   Row,
   Col,
-} from "reactstrap";
+} from "reactstrap"; // eslint-disable-line no-unused-vars
 import { Spinner, FormFile } from 'react-bootstrap';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 
+const INDIA_STATES_CITIES = {
+  'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati'],
+  'Arunachal Pradesh': ['Itanagar', 'Naharlagun', 'Pasighat'],
+  'Assam': ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon'],
+  'Bihar': ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia'],
+  'Chhattisgarh': ['Raipur', 'Bhilai', 'Bilaspur', 'Korba', 'Durg'],
+  'Goa': ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa'],
+  'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar'],
+  'Haryana': ['Faridabad', 'Gurgaon', 'Panipat', 'Ambala', 'Hisar', 'Rohtak'],
+  'Himachal Pradesh': ['Shimla', 'Dharamshala', 'Solan', 'Mandi', 'Kullu'],
+  'Jharkhand': ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Deoghar'],
+  'Karnataka': ['Bangalore', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Kalaburagi'],
+  'Kerala': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam', 'Alappuzha'],
+  'Madhya Pradesh': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar'],
+  'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Thane'],
+  'Manipur': ['Imphal', 'Thoubal', 'Bishnupur'],
+  'Meghalaya': ['Shillong', 'Tura', 'Jowai'],
+  'Mizoram': ['Aizawl', 'Lunglei', 'Champhai'],
+  'Nagaland': ['Kohima', 'Dimapur', 'Mokokchung'],
+  'Odisha': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Brahmapur', 'Sambalpur'],
+  'Punjab': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali'],
+  'Rajasthan': ['Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur'],
+  'Sikkim': ['Gangtok', 'Namchi', 'Mangan'],
+  'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli'],
+  'Telangana': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam'],
+  'Tripura': ['Agartala', 'Dharmanagar', 'Udaipur'],
+  'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Agra', 'Varanasi', 'Meerut', 'Prayagraj', 'Noida', 'Ghaziabad'],
+  'Uttarakhand': ['Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rishikesh'],
+  'West Bengal': ['Kolkata', 'Asansol', 'Siliguri', 'Durgapur', 'Howrah'],
+  'Andaman and Nicobar Islands': ['Port Blair'],
+  'Chandigarh': ['Chandigarh'],
+  'Dadra and Nagar Haveli and Daman and Diu': ['Daman', 'Diu', 'Silvassa'],
+  'Delhi': ['New Delhi', 'Dwarka', 'Rohini', 'Janakpuri', 'Laxmi Nagar', 'Saket'],
+  'Jammu and Kashmir': ['Srinagar', 'Jammu', 'Anantnag', 'Baramulla'],
+  'Ladakh': ['Leh', 'Kargil'],
+  'Lakshadweep': ['Kavaratti'],
+  'Puducherry': ['Puducherry', 'Karaikal', 'Mahe'],
+};
 
 class AddLand extends Component {
   constructor(props) {
@@ -39,10 +75,12 @@ class AddLand extends Component {
       verified: '',
       registered: '',
       buffer: null,
+      file: null,
       ipfsHash: '',
       propertyPID: '',
       surveyNum: '',
       buffer2: null,
+      file2: null,
       document: '',
       govLandData: null,
       landLookupDone: false,
@@ -59,8 +97,6 @@ class AddLand extends Component {
     try {
       //Get network provider and web3 instance
       const web3 = await getWeb3();
-
-      const accounts = await web3.eth.getAccounts();
 
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = LandContract.networks[networkId];
@@ -114,32 +150,30 @@ class AddLand extends Component {
   }
 
   addimage = async () => {
-    if (!this.state.buffer) {
-      console.log('No image selected, skipping upload');
+    if (!this.state.file) {
       this.setState({ ipfsHash: '' });
       return;
     }
     try {
-      const result = await fileUpload.upload(this.state.buffer);
+      const result = await fileUpload.upload(this.state.file);
       this.setState({ ipfsHash: result.fileId || '' });
       console.log('ipfsHash:', result.fileId);
     } catch (e) {
-      console.error('File upload failed:', e.message);
+      console.error('Image upload failed:', e.message);
       this.setState({ ipfsHash: '' });
     }
   }
   addDoc = async () => {
-    if (!this.state.buffer2) {
-      console.log('No document selected, skipping upload');
+    if (!this.state.file2) {
       this.setState({ document: '' });
       return;
     }
     try {
-      const result = await fileUpload.upload(this.state.buffer2);
+      const result = await fileUpload.upload(this.state.file2);
       this.setState({ document: result.fileId || '' });
       console.log('document:', result.fileId);
     } catch (e) {
-      console.error('File upload failed:', e.message);
+      console.error('Document upload failed:', e.message);
       this.setState({ document: '' });
     }
   }
@@ -189,9 +223,9 @@ class AddLand extends Component {
   updateCity = event => (
     this.setState({ city: event.target.value })
   )
-  updateState = event => (
-    this.setState({ stateLoc: event.target.value })
-  )
+  updateState = event => {
+    this.setState({ stateLoc: event.target.value, city: '' });
+  }
   updatePrice = event => (
     this.setState({ price: event.target.value })
   )
@@ -204,24 +238,12 @@ class AddLand extends Component {
   captureFile(event) {
     event.preventDefault()
     const file = event.target.files[0]
-    const reader = new window.FileReader()
-    reader.readAsArrayBuffer(file)
-    reader.onloadend = () => {
-      this.setState({ buffer: Buffer(reader.result) })
-      console.log('buffer', this.state.buffer)
-    }
-    console.log('caoture file...')
+    if (file) this.setState({ file })
   }
   captureDoc(event) {
     event.preventDefault()
     const file2 = event.target.files[0]
-    const reader2 = new window.FileReader()
-    reader2.readAsArrayBuffer(file2)
-    reader2.onloadend = () => {
-      this.setState({ buffer2: Buffer(reader2.result) })
-      console.log('buffer2', this.state.buffer2)
-    }
-    console.log('caoture doc...')
+    if (file2) this.setState({ file2 })
   }
 
   render() {
@@ -286,29 +308,37 @@ class AddLand extends Component {
                   <Row>
                     <Col md="12">
                       <FormGroup>
-                        <label>City</label>
+                        <label>State</label>
                         <Input
-                          placeholder="City"
-                          type="text"
-                          value={this.state.city}
-                          onChange={this.updateCity}
-                        />
+                          type="select"
+                          value={this.state.stateLoc}
+                          onChange={this.updateState}
+                        >
+                          <option value="">-- Select State --</option>
+                          {Object.keys(INDIA_STATES_CITIES).sort().map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </Input>
                       </FormGroup>
                     </Col>
                   </Row>
                   <Row>
                     <Col md="12">
                       <FormGroup>
-                        <label>State</label>
+                        <label>City</label>
                         <Input
-                          placeholder="State"
-                          type="text"
-                          value={this.state.stateLoc}
-                          onChange={this.updateState}
-                        />
+                          type="select"
+                          value={this.state.city}
+                          onChange={this.updateCity}
+                          disabled={!this.state.stateLoc}
+                        >
+                          <option value="">-- Select City --</option>
+                          {(INDIA_STATES_CITIES[this.state.stateLoc] || []).map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </Input>
                       </FormGroup>
                     </Col>
-
                   </Row>
                   <Row>
                     <Col md="12">

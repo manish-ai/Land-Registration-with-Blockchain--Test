@@ -129,14 +129,18 @@ class SellerInfo extends Component {
                     <td><a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
                     <td>{statusBadge}</td>
                     <td>
-                        <Button onClick={this.verifySeller(sellersMap[i])} disabled={seller_verify || not_verify} size="sm" color="success">
-                            Verify
-                        </Button>
+                        {!seller_verify && !not_verify && (
+                            <Button onClick={this.verifySeller(sellersMap[i])} size="sm" color="success">
+                                Verify
+                            </Button>
+                        )}
                     </td>
                     <td>
-                        <Button onClick={this.NotverifySeller(sellersMap[i])} disabled={seller_verify || not_verify} size="sm" color="danger">
-                            Reject
-                        </Button>
+                        {!seller_verify && !not_verify && (
+                            <Button onClick={this.NotverifySeller(sellersMap[i])} size="sm" color="danger">
+                                Reject
+                            </Button>
+                        )}
                     </td>
                 </tr>)
 
