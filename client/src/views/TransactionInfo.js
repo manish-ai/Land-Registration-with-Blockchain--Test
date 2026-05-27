@@ -202,7 +202,7 @@ class TransactionInfo extends Component {
                                                 <th>Area</th>
                                                 <th>City</th>
                                                 <th>State</th>
-                                                <th>Price</th>
+                                                <th>Price (₹)</th>
                                                 <th>Property PID</th>
                                                 <th>Survey Number</th>
                                                 <th>Verify Land Transfer</th>

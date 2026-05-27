@@ -2,65 +2,35 @@ import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress } from '../services/authService';
-import { Line, Bar } from "react-chartjs-2";
-import '../index.css';
-import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
-import { Spinner } from 'react-bootstrap'
-import {
-    LoadingContainer,
-    AccountData,
-    ContractData,
-    ContractForm
-} from '../drizzle-shims/drizzle-react-components'
-
-// reactstrap components
+import { Spinner } from 'react-bootstrap';
 import {
     Button,
-    ButtonGroup,
     Card,
     CardHeader,
     CardBody,
     CardTitle,
-    Table,
     Row,
     Col,
-    UncontrolledTooltip,
 } from "reactstrap";
-
 import "../card.css";
-
-
-const drizzleOptions = {
-  contracts: [Land]
-}
-
-
-var verified;
-var row = [];
-var buyerarr = [];
-var sellerarr = [];
-var reqsarr = [];
 
 class LIDashboard extends Component {
     constructor(props) {
-        super(props)
-
+        super(props);
         this.state = {
             LandInstance: undefined,
-            account: null,
             web3: null,
-            verified: '',
-        }
+            verified: false,
+            sellersCount: 0,
+            buyersCount: 0,
+            requestsCount: 0,
+            landsCount: 0,
+        };
     }
 
     componentDidMount = async () => {
         try {
-            //Get network provider and web3 instance
             const web3 = await getWeb3();
-
-            const accounts = await web3.eth.getAccounts();
-
             const currentAddress = getWalletAddress();
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
@@ -68,38 +38,26 @@ class LIDashboard extends Component {
                 Land.abi,
                 deployedNetwork && deployedNetwork.address,
             );
+            this.setState({ LandInstance: instance, web3 });
 
-            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+            const verified = await instance.methods.isLandInspector(currentAddress).call();
+            const sellersCount = parseInt(await instance.methods.getSellersCount().call());
+            const buyersCount = parseInt(await instance.methods.getBuyersCount().call());
+            const requestsCount = parseInt(await instance.methods.getRequestsCount().call());
+            const landsCount = parseInt(await instance.methods.getLandsCount().call());
 
-            var verified = await instance.methods.isLandInspector(currentAddress).call();
-            this.setState({ verified: verified });
-
-            sellerarr.push(<ContractData contract="Land" method="getSellersCount" />);
-            buyerarr.push(<ContractData contract="Land" method="getBuyersCount" />);
-            reqsarr.push(<ContractData contract="Land" method="getRequestsCount" />);
-
-
+            this.setState({ verified, sellersCount, buyersCount, requestsCount, landsCount });
         } catch (error) {
-            // Catch any errors for any of the above operations.
-            alert(
-                `Failed to load web3, accounts, or contract. Check console for details.`,
-            );
+            alert('Failed to load contract data. Check console for details.');
             console.error(error);
         }
     };
 
-
-
     render() {
         if (!this.state.web3) {
             return (
-                <div>
-                    <div>
-                        <h1>
-                            <Spinner animation="border" variant="primary" />
-                        </h1>
-                    </div>
-
+                <div className="content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+                    <Spinner animation="border" variant="primary" />
                 </div>
             );
         }
@@ -107,120 +65,160 @@ class LIDashboard extends Component {
         if (!this.state.verified) {
             return (
                 <div className="content">
-                    <div>
-                        <Row>
-                            <Col xs="6">
-                                <Card className="card-chart">
-                                    <CardBody>
-                                        <h1>
-                                            You are not verified to view this page
-                                        </h1>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </div>
-
+                    <Row><Col xs="6">
+                        <Card><CardBody>
+                            <h4 style={{ color: '#e14eca' }}>You are not authorized to view this page.</h4>
+                        </CardBody></Card>
+                    </Col></Row>
                 </div>
             );
         }
 
+        const { sellersCount, buyersCount, requestsCount, landsCount } = this.state;
+
         return (
-            <DrizzleProvider options={drizzleOptions}>
-                <LoadingContainer>
-                    <div className="content">
-                        <div className="main-section">
-                            <Row>
-                                <Col lg="4">
-                                    <div class="dashbord dashbord-skyblue">
-                                        <div class="icon-section">
-                                            <i class="fa fa-users" aria-hidden="true"></i><br />
-                                            <medium>Total Buyers</medium><br />
-                                            <p> {buyerarr} </p>
-                                        </div>
-                                        <div class="detail-section"><br />
-                                        </div>
-                                    </div>
-                                </Col>
-                                <Col lg="4">
-                                    <div class="dashbord dashbord-blue">
-                                        <div class="icon-section">
-                                            <i class="fa fa-bell" aria-hidden="true"></i><br />
-                                            <medium>Total Requests</medium><br />
-                                            <p>{reqsarr}</p>
-                                        </div>
-                                        <div class="detail-section">
-                                            <br />
-                                        </div>
-                                    </div>
-                                </Col>
-                                <Col lg="4">
-                                    <div class="dashbord dashbord-orange">
-                                        <div class="icon-section">
-                                            <i class="fa fa-users" aria-hidden="true"></i><br />
-                                            <medium>Total Sellers</medium><br />
-                                            <p>{sellerarr}</p>
-                                        </div>
-                                        <div class="detail-section"><br />
-                                        </div>
-                                    </div>
-                                </Col>
-                            </Row>
-                        </div>
-                        <Row>
-                        <Col lg="4">
-                                <Card>
-                                    <CardHeader>
-                                        <h5 className="title">Buyers Information</h5>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <div className="chart-area">
+            <div className="content">
+                {/* Stat cards */}
+                <div className="main-section">
+                    <Row>
+                        <Col lg="3" md="6">
+                            <div className="dashbord dashbord-skyblue">
+                                <div className="icon-section">
+                                    <i className="fa fa-users" aria-hidden="true" />
+                                    <medium>Registered Buyers</medium>
+                                    <p>{buyersCount}</p>
+                                </div>
+                                <div className="detail-section" />
+                            </div>
+                        </Col>
+                        <Col lg="3" md="6">
+                            <div className="dashbord dashbord-orange">
+                                <div className="icon-section">
+                                    <i className="fa fa-store" aria-hidden="true" />
+                                    <medium>Registered Sellers</medium>
+                                    <p>{sellersCount}</p>
+                                </div>
+                                <div className="detail-section" />
+                            </div>
+                        </Col>
+                        <Col lg="3" md="6">
+                            <div className="dashbord dashbord-blue">
+                                <div className="icon-section">
+                                    <i className="fa fa-bell" aria-hidden="true" />
+                                    <medium>Total Requests</medium>
+                                    <p>{requestsCount}</p>
+                                </div>
+                                <div className="detail-section" />
+                            </div>
+                        </Col>
+                        <Col lg="3" md="6">
+                            <div className="dashbord dashbord-skyblue">
+                                <div className="icon-section">
+                                    <i className="fa fa-landmark" aria-hidden="true" />
+                                    <medium>Lands Registered</medium>
+                                    <p>{landsCount}</p>
+                                </div>
+                                <div className="detail-section" />
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
 
-                                            <Button href="/admin/buyers" className="btn-fill" color="primary">
-                                                Verify Buyers
-                </Button>
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                            <Col lg="4">
-                                <Card>
-                                    <CardHeader>
-                                        <h5 className="title">Land Transfer Requests</h5>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <div className="chart-area">
-
-                                            <Button href="/admin/transactions" className="btn-fill" color="primary">
-                                                Approve Land Transactions
-                        </Button>
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                            <Col lg="4">
-                                <Card>
-                                    <CardHeader>
-                                        <h5 className="title">Sellers Information</h5>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <div className="chart-area">
-
-                                            <Button href="/admin/sellers" className="btn-fill" color="primary">
-                                                Verify Sellers
-                </Button>
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                            
-                            
-                        </Row>
-                    </div>
-                </LoadingContainer>
-            </DrizzleProvider>
+                {/* Action cards */}
+                <Row>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-single-02" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    Buyer Verification
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    Review registered buyers and approve their profiles to allow land purchases.
+                                </p>
+                                <Button href="/admin/buyers" className="btn-fill" color="primary" block>
+                                    Verify Buyers
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-single-02" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    Seller Verification
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    Review registered sellers and approve their profiles to allow land listings.
+                                </p>
+                                <Button href="/admin/sellers" className="btn-fill" color="primary" block>
+                                    Verify Sellers
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-check-2" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    Ownership Transfers
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    Approve final land ownership transfers after buyer payment is confirmed.
+                                </p>
+                                <Button href="/admin/approve" className="btn-fill" color="success" block>
+                                    Approve Transfers
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-send" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    All Transactions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    View the full transaction history across all land purchase requests.
+                                </p>
+                                <Button href="/admin/transactions" className="btn-fill" color="info" block>
+                                    View Transactions
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-notes" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    Audit Trail
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    View a complete log of all system activity for oversight and accountability.
+                                </p>
+                                <Button href="/admin/audit" className="btn-fill" color="warning" block>
+                                    View Audit Trail
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
         );
-
     }
 }
 

@@ -47,8 +47,6 @@ class Dashboard extends Component {
       web3: null,
       count: 0,
       requested: false,
-      ethRate: 0.0000057,
-      ethRateLoaded: false,
       bankReceipt: null,
       row: [],
     }
@@ -118,16 +116,6 @@ class Dashboard extends Component {
 
       this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
-      // Fetch ETH rate from gov API
-      const rateResult = await govApi.getEthRate();
-      var ethRate = 0.0000057; // fallback
-      if (rateResult.rate) {
-        ethRate = 1 / rateResult.rate; // rate is ETH_INR, we need INR_to_ETH
-        this.setState({ ethRate: ethRate, ethRateLoaded: true });
-      } else {
-        this.setState({ ethRate: ethRate });
-      }
-
       const currentAddress = getWalletAddress();
       console.log(currentAddress);
       var registered = await instance.methods.isBuyer(currentAddress).call();
@@ -147,8 +135,8 @@ class Dashboard extends Component {
         var paid = await instance.methods.isPaid(i).call();
         var price = await instance.methods.getPrice(request[2]).call();
         var landPID = await instance.methods.getPID(request[2]).call();
-        var ethAmount = (price * ethRate).toFixed(8);
-        rowItems.push(<tr key={i}><td>{i}</td><td>{request[0]}</td><td>{price} (ETH: {ethAmount})</td>
+        const priceFormatted = '₹' + parseInt(price).toLocaleString('en-IN');
+        rowItems.push(<tr key={i}><td>{i}</td><td>{request[0]}</td><td>{priceFormatted}</td>
           <td>
             <Button onClick={this.makePayment(request[0], landPID, price, i)}
             disabled={paid} className="btn btn-success">
@@ -218,7 +206,7 @@ class Dashboard extends Component {
                 <Col lg="12" md="12">
                   <Card>
                     <CardHeader>
-                      <CardTitle tag="h4">Payment for Lands<span className="duration">₹ 1 = {this.state.ethRate.toFixed(10)} Ether {this.state.ethRateLoaded ? '(live)' : '(fallback)'}</span></CardTitle>
+                      <CardTitle tag="h4">Payment for Lands</CardTitle>
 
                     </CardHeader>
                     <CardBody>

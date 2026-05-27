@@ -313,10 +313,11 @@ class AddLand extends Component {
                   <Row>
                     <Col md="12">
                       <FormGroup>
-                        <label>Price</label>
+                        <label>Price (in ₹)</label>
                         <Input
-                          placeholder="Price"
-                          type="text"
+                          placeholder="e.g. 5000000 for ₹50,00,000"
+                          type="number"
+                          min="1"
                           value={this.state.price}
                           onChange={this.updatePrice}
                         />

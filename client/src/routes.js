@@ -5,7 +5,6 @@ import OwnedLands from "./views/OwnedLands";
 import MakePayment from "./views/MakePayment";
 import updateBuyer from "./views/updateBuyer";
 import Help from "./Help";
-import AuditTrail from "./views/AuditTrail";
 
 var routes = [
   {
@@ -55,13 +54,6 @@ var routes = [
     name: "",
     icon: "tim-icons",
     component: updateBuyer,
-    layout: "/buyer",
-  },
-  {
-    path: "/audit",
-    name: "Audit Trail",
-    icon: "tim-icons icon-notes",
-    component: AuditTrail,
     layout: "/buyer",
   },
 ];

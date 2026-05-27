@@ -81,7 +81,8 @@ class SDash extends Component {
         var price = await instance.methods.getPrice(i).call();
         var pid = await instance.methods.getPID(i).call();
         var survey = await instance.methods.getSurveyNumber(i).call();
-        row.push(<tr key={i}><td>{myLandCount}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{price}</td><td>{pid}</td><td>{survey}</td></tr>);
+        const priceINR = '₹' + parseInt(price).toLocaleString('en-IN');
+        row.push(<tr key={i}><td>{myLandCount}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{priceINR}</td><td>{pid}</td><td>{survey}</td></tr>);
       }
 
       // Count requests for this seller's lands
@@ -145,79 +146,97 @@ class SDash extends Component {
         <div className="content">
           <div className="main-section">
                 <Row>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-orange">
-                      <div class="icon-section">
-                        <i class="fa fa-landmark" aria-hidden="true"></i><br />
-                        <medium>My Listed Lands</medium><br />
+                  <Col lg="4" md="6">
+                    <div className="dashbord dashbord-orange">
+                      <div className="icon-section">
+                        <i className="fa fa-landmark" aria-hidden="true" />
+                        <medium>My Listed Lands</medium>
                         <p>{this.state.myLandCount}</p>
                       </div>
-                      <div class="detail-section"><br />
-                      </div>
+                      <div className="detail-section" />
                     </div>
                   </Col>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-blue">
-                      <div class="icon-section">
-                        <i class="fa fa-bell" aria-hidden="true"></i><br />
-                        <medium>Requests for My Lands</medium><br />
+                  <Col lg="4" md="6">
+                    <div className="dashbord dashbord-blue">
+                      <div className="icon-section">
+                        <i className="fa fa-bell" aria-hidden="true" />
+                        <medium>Incoming Requests</medium>
                         <p>{this.state.myRequestCount}</p>
                       </div>
-                      <div class="detail-section">
-                        <br />
-                      </div>
+                      <div className="detail-section" />
                     </div>
                   </Col>
                 </Row>
               </div>
+
+          {!this.state.verified && (
+            <Row>
+              <Col lg="12">
+                <div style={{
+                  background: 'rgba(255, 179, 0, 0.1)',
+                  border: '1px solid rgba(255, 179, 0, 0.4)',
+                  borderRadius: 8,
+                  padding: '12px 18px',
+                  marginBottom: 16,
+                  color: '#ffb300',
+                  fontSize: 13,
+                }}>
+                  <strong>Pending Verification:</strong> Your account is awaiting Land Inspector approval. Once verified, you can add lands and accept requests.
+                </div>
+              </Col>
+            </Row>
+          )}
+
           <Row>
-            <Col lg="4">
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Wish to Add Land !</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-world" style={{ marginRight: 8, color: '#e14eca' }} />
+                    List a Land
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/seller/add-land" disabled={!this.state.verified} className="btn-fill" color="primary">
-                      Add Land
-                </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>Add a new property to the marketplace for buyers to discover.</p>
+                  <Button href="/seller/add-land" disabled={!this.state.verified} className="btn-fill" color="primary" block>
+                    Add Land
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
-            <Col lg="4">
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Profile</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-badge" style={{ marginRight: 8, color: '#e14eca' }} />
+                    Buyer Requests
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/seller/sellerProfile" className="btn-fill" color="primary">
-                      View Profile
-                </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>Review and accept incoming purchase offers from verified buyers.</p>
+                  <Button href="/seller/requests" disabled={!this.state.verified} className="btn-fill" color="success" block>
+                    View Requests
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
-            <Col lg="4">
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Requests</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-single-02" style={{ marginRight: 8, color: '#e14eca' }} />
+                    My Profile
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/seller/requests" disabled={!this.state.verified} className="btn-fill" color="primary">
-                      View all Land Requests
-                        </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>View and update your registered seller details.</p>
+                  <Button href="/seller/profile" className="btn-fill" color="info" block>
+                    View Profile
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
           </Row>
-         
           <Row>
                 <Col lg="12" md="12">
                   <Card>
@@ -225,21 +244,21 @@ class SDash extends Component {
                       <CardTitle tag="h4">My Lands</CardTitle>
                     </CardHeader>
                     <CardBody>
-                      <Table className="tablesorter" responsive color="black">
+                      <Table className="tablesorter" responsive>
                         <thead className="text-primary">
                           <tr>
                             <th>#</th>
-                            <th>Area</th>
+                            <th>Area (sq ft)</th>
                             <th>City</th>
                             <th>State</th>
-                            <th>Price</th>
+                            <th>Price (₹)</th>
                             <th>Property PID</th>
-                            <th>Survey Number</th>
+                            <th>Survey No.</th>
                           </tr>
                         </thead>
                         <tbody>
                           {this.state.row.length > 0 ? this.state.row : (
-                            <tr><td colSpan="7" style={{textAlign: "center", color: "#888"}}>No lands added yet.</td></tr>
+                            <tr><td colSpan="7" style={{textAlign: "center", color: "#888", padding: 20}}>No lands added yet. Click "Add Land" to list your first property.</td></tr>
                           )}
                         </tbody>
                       </Table>
@@ -247,20 +266,6 @@ class SDash extends Component {
                   </Card>
                 </Col>
               </Row>
-          <Row>
-            <Col lg="4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>View Images of all Lands!</CardTitle>
-                </CardHeader>
-                <CardBody>
-                    <Button href="/seller/gallery" className="btn-fill" color="primary">
-                      View Images
-                </Button>
-                </CardBody>
-              </Card>
-            </Col>
-            </Row>
         </div>
       </>
 

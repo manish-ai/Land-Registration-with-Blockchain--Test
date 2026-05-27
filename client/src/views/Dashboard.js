@@ -116,7 +116,8 @@ class Dashboard extends Component {
         var survey = await instance.methods.getSurveyNumber(i).call();
         var requested = await instance.methods.isRequested(i).call();
 
-        row.push(<tr key={i}><td>{i}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{price}</td><td>{pid}</td><td>{survey}</td>
+        const priceINR = '₹' + parseInt(price).toLocaleString('en-IN');
+        row.push(<tr key={i}><td>{i}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{priceINR}</td><td>{pid}</td><td>{survey}</td>
           <td>
             <Button onClick={this.requestLand(landOwner, i)} disabled={!verified || requested} className="button-vote">
               Request Land
@@ -177,74 +178,93 @@ class Dashboard extends Component {
         <div className="content">
           <div className="main-section">
                 <Row>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-orange">
-                      <div class="icon-section">
-                        <i class="fa fa-landmark" aria-hidden="true"></i><br />
-                        <medium>Available Lands</medium><br />
+                  <Col lg="4" md="6">
+                    <div className="dashbord dashbord-orange">
+                      <div className="icon-section">
+                        <i className="fa fa-landmark" aria-hidden="true" />
+                        <medium>Available Lands</medium>
                         <p>{this.state.totalLands}</p>
                       </div>
-                      <div class="detail-section"><br />
-                      </div>
+                      <div className="detail-section" />
                     </div>
                   </Col>
-                  <Col lg="4">
-                    <div class="dashbord dashbord-skyblue">
-                      <div class="icon-section">
-                        <i class="fa fa-bell" aria-hidden="true"></i><br />
-                        <medium>My Land Requests</medium><br />
+                  <Col lg="4" md="6">
+                    <div className="dashbord dashbord-skyblue">
+                      <div className="icon-section">
+                        <i className="fa fa-bell" aria-hidden="true" />
+                        <medium>My Requests</medium>
                         <p>{this.state.myRequestCount}</p>
                       </div>
-                      <div class="detail-section">
-                        <br />
-                      </div>
+                      <div className="detail-section" />
                     </div>
                   </Col>
                 </Row>
               </div>
-                    <Row>
-            <Col lg="4">
+
+          {!this.state.verified && this.state.registered && (
+            <Row>
+              <Col lg="12">
+                <div style={{
+                  background: 'rgba(255, 179, 0, 0.1)',
+                  border: '1px solid rgba(255, 179, 0, 0.4)',
+                  borderRadius: 8,
+                  padding: '12px 18px',
+                  marginBottom: 16,
+                  color: '#ffb300',
+                  fontSize: 13,
+                }}>
+                  <strong>Pending Verification:</strong> Your account is awaiting Land Inspector approval. Once verified, you can request land purchases.
+                </div>
+              </Col>
+            </Row>
+          )}
+
+          <Row>
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Profile</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-single-02" style={{ marginRight: 8, color: '#e14eca' }} />
+                    My Profile
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/buyer/profile" className="btn-fill" color="primary">
-                      View Profile
-                </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>View and update your registered buyer details.</p>
+                  <Button href="/buyer/profile" className="btn-fill" color="info" block>
+                    View Profile
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
-            <Col lg="4">
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Owned Lands</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-bank" style={{ marginRight: 8, color: '#e14eca' }} />
+                    Owned Lands
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/buyer/owned-lands" className="btn-fill" color="primary">
-                      View Your Lands
-                </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>View all land properties that have been transferred to you.</p>
+                  <Button href="/buyer/owned-lands" className="btn-fill" color="primary" block>
+                    View Owned Lands
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
-            <Col lg="4">
+            <Col lg="4" md="6">
               <Card>
                 <CardHeader>
-                  <h5 className="title">Make Payments for Approved Land Requests</h5>
+                  <CardTitle tag="h5">
+                    <i className="tim-icons icon-money-coins" style={{ marginRight: 8, color: '#e14eca' }} />
+                    Payments
+                  </CardTitle>
                 </CardHeader>
                 <CardBody>
-                  <div className="chart-area">
-
-                    <Button href="/buyer/payment" className="btn-fill" color="primary">
-                      Make Payment
-                </Button>
-                  </div>
+                  <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>Complete payment for requests that have been accepted by the seller.</p>
+                  <Button href="/buyer/payment" className="btn-fill" color="success" block>
+                    Make Payment
+                  </Button>
                 </CardBody>
               </Card>
             </Col>
@@ -256,17 +276,17 @@ class Dashboard extends Component {
                       <CardTitle tag="h4">Available Lands</CardTitle>
                     </CardHeader>
                     <CardBody>
-                      <Table className="tablesorter" responsive color="black">
+                      <Table className="tablesorter" responsive>
                         <thead className="text-primary">
                           <tr>
                             <th>#</th>
-                            <th>Area</th>
+                            <th>Area (sq ft)</th>
                             <th>City</th>
                             <th>State</th>
-                            <th>Price</th>
+                            <th>Price (₹)</th>
                             <th>Property PID</th>
-                            <th>Survey Number</th>
-                            <th>Request Land</th>
+                            <th>Survey No.</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>

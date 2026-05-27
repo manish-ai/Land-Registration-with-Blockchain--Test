@@ -95,8 +95,8 @@ class ApproveRequest extends Component {
                 if (currentAddress.toLowerCase() === request[0].toLowerCase()) {
                     requestTable.push(<tr key={i}><td>{i}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
                         <td>
-                            <Button onClick={this.approveRequest(i)} disabled={approved} className="button-vote">
-                                Approve Request
+                            <Button onClick={this.approveRequest(i)} disabled={approved} className="button-vote" color="success" size="sm">
+                                {approved ? 'Accepted' : 'Accept Offer'}
                     </Button>
                         </td></tr>)
                 }
@@ -153,10 +153,10 @@ class ApproveRequest extends Component {
                                     <thead className="text-primary">
                                         <tr>
                                             <th>#</th>
-                                            <th>Buyer ID</th>
+                                            <th>Buyer Address</th>
                                             <th>Land ID</th>
                                             <th>Request Status</th>
-                                            <th>Approve Request</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>

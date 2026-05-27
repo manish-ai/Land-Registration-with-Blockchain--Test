@@ -5,7 +5,6 @@ import sellerProfile from "./views/sellerProfile";
 import viewImage from "./views/viewImage";
 import updateSeller from "./views/updateSeller";
 import Help from "./Help";
-import AuditTrail from "./views/AuditTrail";
 
 var routes = [
   {
@@ -55,13 +54,6 @@ var routes = [
     name: "",
     icon: "tim-icons",
     component: updateSeller,
-    layout: "/seller",
-  },
-  {
-    path: "/audit",
-    name: "Audit Trail",
-    icon: "tim-icons icon-notes",
-    component: AuditTrail,
     layout: "/seller",
   },
 ];
