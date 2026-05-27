@@ -20,7 +20,7 @@ function Sidebar(props) {
   const sidebarRef = React.useRef(null);
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
-    return location.pathname === routeName ? "active" : "";
+    return location.pathname.includes(routeName) ? "active" : "";
   };
   React.useEffect(() => {
     if (navigator.platform.indexOf("Win") > -1) {
@@ -95,8 +95,26 @@ function Sidebar(props) {
         <div className="sidebar" data={color}>
           <div className="sidebar-wrapper" ref={sidebarRef}>
             {logoImg !== null || logoText !== null ? (
-              <div className="logo">
-                
+              <div style={{
+                padding: '22px 20px 18px',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                marginBottom: 4,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 8,
+                    background: 'rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 17, flexShrink: 0,
+                  }}>
+                    🏛
+                  </div>
+                  <div>
+                    <div style={{ color: '#ffffff', fontSize: 14, fontWeight: 700, lineHeight: 1.2, letterSpacing: 0.3 }}>Land Registry</div>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 500, marginTop: 2 }}>Digital Platform</div>
+                  </div>
+                </div>
               </div>
             ) : null}
             <Nav>
@@ -111,8 +129,7 @@ function Sidebar(props) {
                   >
                     <NavLink
                       to={prop.layout + prop.path}
-                      className="nav-link"
-                      activeClassName="active"
+                      className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
                       onClick={props.toggleSidebar}
                     >
                       <i className={prop.icon} />

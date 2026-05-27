@@ -78,51 +78,37 @@ class LIDashboard extends Component {
 
         return (
             <div className="content">
-                {/* Stat cards */}
-                <div className="main-section">
-                    <Row>
-                        <Col lg="3" md="6">
-                            <div className="dashbord dashbord-skyblue">
-                                <div className="icon-section">
-                                    <i className="fa fa-users" aria-hidden="true" />
-                                    <medium>Registered Buyers</medium>
-                                    <p>{buyersCount}</p>
-                                </div>
-                                <div className="detail-section" />
-                            </div>
-                        </Col>
-                        <Col lg="3" md="6">
-                            <div className="dashbord dashbord-orange">
-                                <div className="icon-section">
-                                    <i className="fa fa-store" aria-hidden="true" />
-                                    <medium>Registered Sellers</medium>
-                                    <p>{sellersCount}</p>
-                                </div>
-                                <div className="detail-section" />
-                            </div>
-                        </Col>
-                        <Col lg="3" md="6">
-                            <div className="dashbord dashbord-blue">
-                                <div className="icon-section">
-                                    <i className="fa fa-bell" aria-hidden="true" />
-                                    <medium>Total Requests</medium>
-                                    <p>{requestsCount}</p>
-                                </div>
-                                <div className="detail-section" />
-                            </div>
-                        </Col>
-                        <Col lg="3" md="6">
-                            <div className="dashbord dashbord-skyblue">
-                                <div className="icon-section">
-                                    <i className="fa fa-landmark" aria-hidden="true" />
-                                    <medium>Lands Registered</medium>
-                                    <p>{landsCount}</p>
-                                </div>
-                                <div className="detail-section" />
-                            </div>
-                        </Col>
-                    </Row>
-                </div>
+                {/* KPI cards */}
+                <Row style={{ marginBottom: 8 }}>
+                    <Col lg="3" md="6">
+                        <div className="kpi-card kpi-blue">
+                            <div className="kpi-icon"><i className="fa fa-users" /></div>
+                            <div className="kpi-number">{buyersCount}</div>
+                            <div className="kpi-label">Registered Buyers</div>
+                        </div>
+                    </Col>
+                    <Col lg="3" md="6">
+                        <div className="kpi-card kpi-indigo">
+                            <div className="kpi-icon"><i className="fa fa-store" /></div>
+                            <div className="kpi-number">{sellersCount}</div>
+                            <div className="kpi-label">Registered Sellers</div>
+                        </div>
+                    </Col>
+                    <Col lg="3" md="6">
+                        <div className="kpi-card kpi-amber">
+                            <div className="kpi-icon"><i className="fa fa-bell" /></div>
+                            <div className="kpi-number">{requestsCount}</div>
+                            <div className="kpi-label">Total Requests</div>
+                        </div>
+                    </Col>
+                    <Col lg="3" md="6">
+                        <div className="kpi-card kpi-teal">
+                            <div className="kpi-icon"><i className="fa fa-landmark" /></div>
+                            <div className="kpi-number">{landsCount}</div>
+                            <div className="kpi-label">Lands Registered</div>
+                        </div>
+                    </Col>
+                </Row>
 
                 {/* Action cards */}
                 <Row>
@@ -174,7 +160,7 @@ class LIDashboard extends Component {
                                 <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
                                     Approve final land ownership transfers after buyer payment is confirmed.
                                 </p>
-                                <Button href="/admin/approve" className="btn-fill" color="success" block>
+                                <Button href="/admin/approve" className="btn-fill" color="primary" block>
                                     Approve Transfers
                                 </Button>
                             </CardBody>
@@ -192,7 +178,7 @@ class LIDashboard extends Component {
                                 <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
                                     View the full transaction history across all land purchase requests.
                                 </p>
-                                <Button href="/admin/transactions" className="btn-fill" color="info" block>
+                                <Button href="/admin/transactions" className="btn-fill" color="primary" block>
                                     View Transactions
                                 </Button>
                             </CardBody>
@@ -210,7 +196,7 @@ class LIDashboard extends Component {
                                 <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
                                     View a complete log of all system activity for oversight and accountability.
                                 </p>
-                                <Button href="/admin/audit" className="btn-fill" color="warning" block>
+                                <Button href="/admin/audit" className="btn-fill" color="primary" block>
                                     View Audit Trail
                                 </Button>
                             </CardBody>

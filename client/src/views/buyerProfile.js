@@ -70,104 +70,38 @@ class buyerProfile extends Component {
             var buyer_verify = await instance.methods.isVerified(currentAddress).call();
             this.setState({verified: buyer_verify});
             var not_verify = await instance.methods.isRejected(currentAddress).call();
-            let verificationEl;
-            if(buyer_verify){
-              verificationEl = <p id="verified">Verified <i className="fas fa-user-check"></i></p>;
-            }else if(not_verify){
-              verificationEl = <p id="rejected">Rejected <i className="fas fa-user-times"></i></p>;
-            }else{
-              verificationEl = <p id="unknown">Not Yet Verified <i className="fas fa-user-cog"></i></p>;
-            }
+            const statusBadge = buyer_verify
+                ? <span style={{ display:'inline-block', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Verified</span>
+                : not_verify
+                ? <span style={{ display:'inline-block', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#f8d7da', color: '#721c24' }}>Rejected</span>
+                : <span style={{ display:'inline-block', padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#fff3cd', color: '#856404' }}>Pending Verification</span>;
 
             const buyer = await instance.methods.getBuyerDetails(currentAddress).call();
             console.log(buyer);
-            console.log(buyer[0]);
+
+            const infoField = (label, value, mono = false) => (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9a9a9a', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 14, color: '#333', fontFamily: mono ? 'monospace' : 'inherit', wordBreak: 'break-all', padding: '8px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: 6, border: '1px solid rgba(0,0,0,0.07)' }}>{value || '—'}</div>
+              </div>
+            );
 
             const buyerTableEl = (<>
-            <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Your Wallet Address: </label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={currentAddress}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Name</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[0]}
-                    />
-                  </FormGroup>
-                </Col>
-
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Age</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[1]}
-                    />
-                  </FormGroup>
-                </Col>
-
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>City</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[2]}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Email Address </label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[3]}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Verification ID</label>
-                    <Input
-                      disabled
-                      type="text"
-                      value={buyer[4]}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-              <Row>
-                <Col md="12">
-                  <FormGroup>
-                    <label>Your Document</label>
-                    <div className="post-meta"><span className="timestamp"> <a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank">Here</a></span></div>
-                  </FormGroup>
-                </Col>
-              </Row>
-             </>);
-            this.setState({ buyerTable: buyerTableEl, verification: verificationEl });
+              {infoField('Wallet Address', currentAddress, true)}
+              {infoField('Name', buyer[0])}
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div style={{ flex: 1 }}>{infoField('Age', buyer[1])}</div>
+                <div style={{ flex: 1 }}>{infoField('City', buyer[2])}</div>
+              </div>
+              {infoField('Email Address', buyer[3])}
+              {infoField('Verification ID', buyer[4], true)}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: '#9a9a9a', marginBottom: 4 }}>Document</div>
+                <a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank" rel="noreferrer"
+                   style={{ color: '#1a5276', fontWeight: 600, fontSize: 13 }}>View Uploaded Document →</a>
+              </div>
+            </>);
+            this.setState({ buyerTable: buyerTableEl, verification: statusBadge });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -200,17 +134,16 @@ class buyerProfile extends Component {
                             <Col md="8">
                                 <Card>
                                     <CardHeader>
-                                        <h5 className="title">Buyer Profile</h5>
-                                        <h5 className="title">{this.state.verification}</h5>
-
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <h5 className="title" style={{ margin: 0 }}>Buyer Profile</h5>
+                                            {this.state.verification}
+                                        </div>
                                     </CardHeader>
                                     <CardBody>
-                                        <Form>
-                                            {this.state.buyerTable}
-                                        </Form>
-                                        <Button href="/buyer/update-profile"  className="btn-fill" disabled={!this.state.verified} color="primary">
+                                        {this.state.buyerTable}
+                                        <Button href="/buyer/update-profile" className="btn-fill" disabled={!this.state.verified} color="primary">
                                             Edit Profile
-                                      </Button>
+                                        </Button>
                                     </CardBody>
                                     <CardFooter>
 

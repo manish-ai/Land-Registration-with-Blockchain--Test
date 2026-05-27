@@ -19,24 +19,24 @@
 .sidebar,
 .off-canvas-sidebar{
   @include linear-gradient($primary-states, $primary);
-  height: calc(100vh - 90px);
-  width: 230px;
+  height: 100vh;
+  width: 240px;
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: 50;
   background-size: cover;
   background-position: center center;
   display: block;
-  box-shadow: 0px 0px 45px 0px rgba(0,0,0,0.6);
-  margin-top: 80px;
-  margin-left: 20px;
-  border-radius: 5px;
+  box-shadow: 2px 0 16px rgba(0,0,0,0.18);
+  margin-top: 0;
+  margin-left: 0;
+  border-radius: 0;
 
   .sidebar-wrapper{
     width: $full-width;
     min-height: 100%;
-    max-height: calc(100vh - 705px);
+    max-height: calc(100vh - 80px);
     z-index: 4;
     position: relative;
     overflow: auto;
@@ -133,8 +133,9 @@
   }
 
   .nav{
-    margin-top: 20px;
+    margin-top: 8px;
     display: block;
+    padding: 0 10px;
 
     .caret{
       top: 14px;
@@ -144,7 +145,7 @@
 
     li{
       > a + div .nav{
-        margin-top: 5px;
+        margin-top: 2px;
         li > a{
           margin-top: 0px;
           padding: 8px 8px;
@@ -152,26 +153,28 @@
       }
 
       > a{
-        margin: 10px 15px 0;
-        border-radius: $btn-round-radius;
-        color: $white;
+        margin: 2px 0;
+        border-radius: 10px;
+        color: rgba(255,255,255,0.75);
         display: block;
         text-decoration: none;
         position: relative;
-        text-transform: uppercase;
+        text-transform: none;
         cursor: pointer;
-        font-size: $font-size-xs;
-        padding: 10px 8px;
-        line-height: $line-height-lg;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 11px 14px;
+        line-height: 1.4;
+        transition: background 0.15s, color 0.15s;
       }
 
       &:first-child > a{
-        margin: 0 15px;
-
+        margin: 2px 0;
       }
 
       &:hover:not(.active) > a,
       &:focus:not(.active) > a{
+        background: rgba(255,255,255,0.1);
         p,i{
           color: $white;
         }
@@ -183,26 +186,21 @@
       }
 
       &.active > a:not([data-toggle="collapse"]){
-        background: transparent;
+        background: rgba(255,255,255,0.18);
+        border-left: 3px solid rgba(255,255,255,0.9);
 
         i,p{
           color: white;
+          font-weight: 600;
         }
 
         &:before{
-          content: " ";
-          position: absolute;
-          height: 6px;
-          width: 6px;
-          top: 22px;
-          left: -4px;
-          background: $white;
-          border-radius: 50%;
+          display: none;
         }
       }
 
       &.active > a[data-toggle="collapse"]{
-        background: transparent;
+        background: rgba(255,255,255,0.18);
         box-shadow: none;
         color: $white;
 
@@ -439,28 +437,22 @@
 .main-panel {
   position: relative;
   float: right;
-  width: $full-width;
+  width: calc(100% - 240px);
   min-height: 100vh;
-  border-top: 2px solid $primary;
-  background: linear-gradient($background-black, $background-states-black);
+  background: #f4f5f7;
+  display: flex;
+  flex-direction: column;
 
   @include transitions (0.50s, cubic-bezier(0.685, 0.0473, 0.346, 1));
 
-  &[data="blue"]{
-    border-top: 2px solid #1F1C2C;
-  }
-
-  &[data="green"]{
-    border-top: 2px solid $success;
-  }
-
-  &[data="primary"]{
-    border-top: 2px solid $primary;
-  }
+  &[data="blue"]{ background: #f4f5f7; }
+  &[data="green"]{ background: #f4f5f7; }
+  &[data="primary"]{ background: #f4f5f7; }
 
   > .content {
-    padding: 78px 30px 30px 280px;
-    min-height: calc(100vh - 70px);
+    padding: 24px 28px 30px;
+    min-height: calc(100vh - 64px - 60px);
+    flex: 1;
   }
 
   > .navbar {

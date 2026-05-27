@@ -1,126 +1,101 @@
 
-import React from "react";
-// nodejs library that concatenates classes
-import classNames from "classnames";
+import { getRole } from "../../services/authService";
 
-// reactstrap components
-import {
-  Button,
-  Collapse,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
-  UncontrolledDropdown,
-  Input,
-  InputGroup,
-  NavbarBrand,
-  Navbar,
-  NavLink,
-  Nav,
-  Container,
-  Modal,
-  NavbarToggler,
-  ModalHeader,
-} from "reactstrap";
+const ROLE_CONFIG = {
+  inspector: { label: 'Land Inspector', color: '#6d28d9', bg: '#ede9fe' },
+  seller:    { label: 'Seller',         color: '#0369a1', bg: '#e0f2fe' },
+  buyer:     { label: 'Buyer',          color: '#047857', bg: '#d1fae5' },
+};
 
-function AdminNavbar(props) {
-  const [collapseOpen, setcollapseOpen] = React.useState(false);
-  const [modalSearch, setmodalSearch] = React.useState(false);
-  const [color, setcolor] = React.useState("navbar-transparent");
-  React.useEffect(() => {
-    window.addEventListener("resize", updateColor);
-    // Specify how to clean up after this effect:
-    return function cleanup() {
-      window.removeEventListener("resize", updateColor);
-    };
-  });
-  // function that adds color white/transparent to the navbar on resize (this is for the collapse)
-  const updateColor = () => {
-    if (window.innerWidth < 993 && collapseOpen) {
-      setcolor("bg-white");
-    } else {
-      setcolor("navbar-transparent");
-    }
-  };
-  // this function opens and closes the collapse on small devices
-  const toggleCollapse = () => {
-    if (collapseOpen) {
-      setcolor("navbar-transparent");
-    } else {
-      setcolor("bg-white");
-    }
-    setcollapseOpen(!collapseOpen);
-  };
-  // this function is to open the Search modal
-  const toggleModalSearch = () => {
-    setmodalSearch(!modalSearch);
-  };
+function AdminNavbar({ brandText, toggleSidebar, sidebarOpened, userName, onLogout }) {
+  const role = getRole();
+  const roleInfo = ROLE_CONFIG[role] || { label: role || 'User', color: '#666', bg: '#f0f0f0' };
+  const initials = userName
+    ? userName.trim().split(/\s+/).map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
-    <>
-      <Navbar className={classNames("navbar-absolute", color)} expand="lg">
-        <Container fluid>
-          <div className="navbar-wrapper">
-            <div
-              className={classNames("navbar-toggle d-inline", {
-                toggled: props.sidebarOpened,
-              })}
-            >
-              <NavbarToggler onClick={props.toggleSidebar}>
-                <span className="navbar-toggler-bar bar1" />
-                <span className="navbar-toggler-bar bar2" />
-                <span className="navbar-toggler-bar bar3" />
-              </NavbarToggler>
-            </div>
-            <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}>
-              {props.brandText}
-            </NavbarBrand>
+    <div style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 28px',
+      height: 64,
+      background: '#ffffff',
+      borderBottom: '1px solid #e8ecf0',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      flexShrink: 0,
+    }}>
+      {/* Left: hamburger + page title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <button
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '8px', borderRadius: 8, display: 'flex',
+            flexDirection: 'column', gap: 5, color: '#344675',
+          }}
+        >
+          <span style={{ display: 'block', width: 20, height: 2, background: '#344675', borderRadius: 2, transition: 'width 0.2s' }} />
+          <span style={{ display: 'block', width: sidebarOpened ? 20 : 14, height: 2, background: '#344675', borderRadius: 2, transition: 'width 0.2s' }} />
+          <span style={{ display: 'block', width: 20, height: 2, background: '#344675', borderRadius: 2 }} />
+        </button>
+
+        <div>
+          <div style={{ fontSize: 10, color: '#9a9a9a', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1, marginBottom: 3 }}>
+            Digital Land Registry
           </div>
-          <NavbarToggler onClick={toggleCollapse}>
-            <span className="navbar-toggler-bar navbar-kebab" />
-            <span className="navbar-toggler-bar navbar-kebab" />
-            <span className="navbar-toggler-bar navbar-kebab" />
-          </NavbarToggler>
-          <Collapse navbar isOpen={collapseOpen}>
-            <Nav className="ml-auto" navbar>
-              {props.userName && (
-                <li className="nav-item" style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
-                  <span style={{ color: '#344675', fontSize: 14, fontWeight: 600 }}>
-                    {props.userName}
-                  </span>
-                </li>
-              )}
-              {props.onLogout && (
-                <li className="nav-item">
-                  <button
-                    onClick={props.onLogout}
-                    style={{ marginRight: 8, fontSize: 13, background: '#e14eca', color: '#fff', border: 'none', borderRadius: 4, padding: '5px 14px', cursor: 'pointer', fontWeight: 600 }}
-                  >
-                    Logout
-                  </button>
-                </li>
-              )}
-              <li className="separator d-lg-none" />
-            </Nav>
-          </Collapse>
-        </Container>
-      </Navbar>
-      <Modal
-        modalClassName="modal-search"
-        isOpen={modalSearch}
-        toggle={toggleModalSearch}
-      >
-        <ModalHeader>
-          <Input placeholder="SEARCH" type="text" />
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', lineHeight: 1 }}>
+            {brandText || 'Dashboard'}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: role badge + avatar + name + logout */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{
+          padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+          background: roleInfo.bg, color: roleInfo.color,
+        }}>
+          {roleInfo.label}
+        </span>
+
+        {userName && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#f7f8fc', borderRadius: 10, border: '1px solid #e8ecf0' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #1a5276 0%, #6d28d9 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
+            }}>
+              {initials}
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#344675', whiteSpace: 'nowrap' }}>
+              {userName}
+            </span>
+          </div>
+        )}
+
+        {onLogout && (
           <button
-            aria-label="Close"
-            className="close"
-            onClick={toggleModalSearch}
+            onClick={onLogout}
+            style={{
+              padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              background: 'none', border: '1.5px solid #dc3545', color: '#dc3545',
+              cursor: 'pointer',
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = '#dc3545'; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#dc3545'; }}
           >
-            <i className="tim-icons icon-simple-remove" />
+            Sign Out
           </button>
-        </ModalHeader>
-      </Modal>
-    </>
+        )}
+      </div>
+    </div>
   );
 }
 

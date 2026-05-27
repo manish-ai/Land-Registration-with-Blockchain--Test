@@ -116,18 +116,29 @@ class SellerInfo extends Component {
                 var not_verify = await instance.methods.isRejected(sellersMap[i]).call();
                 console.log(not_verify);
 
-                sellerTable.push(<tr key={i}><td>{i + 1}</td><td>{sellersMap[i]}</td><td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td><td><a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank">Click Here</a></td>
-                    <td>{seller.verified.toString()}</td>
+                const addrShort = `${sellersMap[i].slice(0, 8)}...${sellersMap[i].slice(-6)}`;
+                const statusBadge = seller_verify
+                    ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Verified</span>
+                    : not_verify
+                    ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#f8d7da', color: '#721c24' }}>Rejected</span>
+                    : <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3cd', color: '#856404' }}>Pending</span>;
+                sellerTable.push(<tr key={i}>
+                    <td>{i + 1}</td>
+                    <td><span title={sellersMap[i]} style={{ fontFamily: 'monospace', fontSize: 12 }}>{addrShort}</span></td>
+                    <td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td>
+                    <td><a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
+                    <td>{statusBadge}</td>
                     <td>
-                        <Button onClick={this.verifySeller(sellersMap[i])} disabled={seller_verify || not_verify} className="button-vote">
+                        <Button onClick={this.verifySeller(sellersMap[i])} disabled={seller_verify || not_verify} size="sm" color="success">
                             Verify
-                    </Button>
+                        </Button>
                     </td>
                     <td>
-                        <Button onClick={this.NotverifySeller(sellersMap[i])} disabled={seller_verify || not_verify} className="btn btn-danger">
-                        Reject
-                    </Button>
-                    </td></tr>)
+                        <Button onClick={this.NotverifySeller(sellersMap[i])} disabled={seller_verify || not_verify} size="sm" color="danger">
+                            Reject
+                        </Button>
+                    </td>
+                </tr>)
 
             }
             this.setState({ sellers: sellerTable.length, sellerTable });

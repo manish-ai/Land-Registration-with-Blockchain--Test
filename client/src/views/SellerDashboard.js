@@ -144,30 +144,22 @@ class SDash extends Component {
     return (
       <>
         <div className="content">
-          <div className="main-section">
-                <Row>
-                  <Col lg="4" md="6">
-                    <div className="dashbord dashbord-orange">
-                      <div className="icon-section">
-                        <i className="fa fa-landmark" aria-hidden="true" />
-                        <medium>My Listed Lands</medium>
-                        <p>{this.state.myLandCount}</p>
-                      </div>
-                      <div className="detail-section" />
-                    </div>
-                  </Col>
-                  <Col lg="4" md="6">
-                    <div className="dashbord dashbord-blue">
-                      <div className="icon-section">
-                        <i className="fa fa-bell" aria-hidden="true" />
-                        <medium>Incoming Requests</medium>
-                        <p>{this.state.myRequestCount}</p>
-                      </div>
-                      <div className="detail-section" />
-                    </div>
-                  </Col>
-                </Row>
-              </div>
+          <Row style={{ marginBottom: 8 }}>
+              <Col lg="3" md="6">
+                <div className="kpi-card kpi-blue">
+                  <div className="kpi-icon"><i className="fa fa-landmark" /></div>
+                  <div className="kpi-number">{this.state.myLandCount}</div>
+                  <div className="kpi-label">My Listed Lands</div>
+                </div>
+              </Col>
+              <Col lg="3" md="6">
+                <div className="kpi-card kpi-amber">
+                  <div className="kpi-icon"><i className="fa fa-bell" /></div>
+                  <div className="kpi-number">{this.state.myRequestCount}</div>
+                  <div className="kpi-label">Incoming Requests</div>
+                </div>
+              </Col>
+            </Row>
 
           {!this.state.verified && (
             <Row>
@@ -214,7 +206,7 @@ class SDash extends Component {
                 </CardHeader>
                 <CardBody>
                   <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>Review and accept incoming purchase offers from verified buyers.</p>
-                  <Button href="/seller/requests" disabled={!this.state.verified} className="btn-fill" color="success" block>
+                  <Button href="/seller/requests" disabled={!this.state.verified} className="btn-fill" color="primary" block>
                     View Requests
                   </Button>
                 </CardBody>
@@ -230,7 +222,7 @@ class SDash extends Component {
                 </CardHeader>
                 <CardBody>
                   <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>View and update your registered seller details.</p>
-                  <Button href="/seller/profile" className="btn-fill" color="info" block>
+                  <Button href="/seller/profile" className="btn-fill" color="primary" block>
                     View Profile
                   </Button>
                 </CardBody>

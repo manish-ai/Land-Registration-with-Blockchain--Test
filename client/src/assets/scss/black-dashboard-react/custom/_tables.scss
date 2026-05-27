@@ -1,6 +1,6 @@
 .table{
   > tbody > tr > td {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: #495057 !important;
 
     .photo {
       height: 30px;
@@ -81,12 +81,14 @@
     }
 
    > thead > tr > th{
-       border-bottom-width: 1px;
-       font-size: 12px;
+       border-bottom: 2px solid #e8ecf0;
+       font-size: 11px;
        text-transform: uppercase;
-       font-weight: $font-weight-extra-bold;
-       border: 0;
-       color: rgba($white, 0.7);
+       font-weight: 700;
+       letter-spacing: 0.6px;
+       color: #6c757d;
+       background: #f8f9fa;
+       padding: 12px 10px;
    }
 
    .radio,
@@ -114,9 +116,13 @@
    > thead > tr > td,
    > tbody > tr > td,
    > tfoot > tr > td{
-       border-color: rgba(255, 255, 255, 0.1);
-       padding: 12px 7px;
+       border-color: #f0f2f5;
+       padding: 13px 10px;
        vertical-align: middle;
+   }
+
+   > tbody > tr:hover > td {
+       background-color: #f8f9ff !important;
    }
 
    &.table-shopping tbody tr:last-child td{
@@ -150,7 +156,7 @@
     }
 
     > tfoot > tr {
-      color: hsla(0,0%,100%,.7);
+      color: #6c757d;
       text-transform: uppercase;
     }
 }

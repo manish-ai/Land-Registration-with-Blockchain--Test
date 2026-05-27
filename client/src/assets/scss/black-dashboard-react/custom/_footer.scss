@@ -1,5 +1,9 @@
 .footer{
-    padding: 24px 0 24px 250px;
+    padding: 16px 28px;
+    background: #ffffff;
+    border-top: 1px solid #e8ecf0;
+    color: #9a9a9a;
+    font-size: 13px;
 
     [class*="container-"] {
       padding: 0;
@@ -22,7 +26,7 @@
     }
 
     .nav-link {
-      color: $white;
+      color: #9a9a9a;
       padding: 0 $padding-base-vertical;
       font-size: $font-size-sm;
       text-transform: uppercase;
@@ -30,6 +34,7 @@
 
       &:hover{
           text-decoration: none;
+          color: #344675;
       }
     }
 
@@ -38,7 +43,9 @@
     .copyright{
         font-size: $font-size-sm;
         line-height: 1.8;
-        color: $white;
+        color: #9a9a9a;
+
+        a { color: #1a5276; }
     }
 
     &:after{

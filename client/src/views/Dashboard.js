@@ -176,30 +176,22 @@ class Dashboard extends Component {
     return (
       <>
         <div className="content">
-          <div className="main-section">
-                <Row>
-                  <Col lg="4" md="6">
-                    <div className="dashbord dashbord-orange">
-                      <div className="icon-section">
-                        <i className="fa fa-landmark" aria-hidden="true" />
-                        <medium>Available Lands</medium>
-                        <p>{this.state.totalLands}</p>
-                      </div>
-                      <div className="detail-section" />
-                    </div>
-                  </Col>
-                  <Col lg="4" md="6">
-                    <div className="dashbord dashbord-skyblue">
-                      <div className="icon-section">
-                        <i className="fa fa-bell" aria-hidden="true" />
-                        <medium>My Requests</medium>
-                        <p>{this.state.myRequestCount}</p>
-                      </div>
-                      <div className="detail-section" />
-                    </div>
-                  </Col>
-                </Row>
-              </div>
+          <Row style={{ marginBottom: 8 }}>
+              <Col lg="3" md="6">
+                <div className="kpi-card kpi-teal">
+                  <div className="kpi-icon"><i className="fa fa-landmark" /></div>
+                  <div className="kpi-number">{this.state.totalLands}</div>
+                  <div className="kpi-label">Available Lands</div>
+                </div>
+              </Col>
+              <Col lg="3" md="6">
+                <div className="kpi-card kpi-indigo">
+                  <div className="kpi-icon"><i className="fa fa-bell" /></div>
+                  <div className="kpi-number">{this.state.myRequestCount}</div>
+                  <div className="kpi-label">My Requests</div>
+                </div>
+              </Col>
+            </Row>
 
           {!this.state.verified && this.state.registered && (
             <Row>
@@ -230,7 +222,7 @@ class Dashboard extends Component {
                 </CardHeader>
                 <CardBody>
                   <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>View and update your registered buyer details.</p>
-                  <Button href="/buyer/profile" className="btn-fill" color="info" block>
+                  <Button href="/buyer/profile" className="btn-fill" color="primary" block>
                     View Profile
                   </Button>
                 </CardBody>

@@ -142,17 +142,27 @@ class BuyerInfo extends Component {
 
                 var not_verify = await instance.methods.isRejected(buyersMap[i]).call();
                 console.log(not_verify);
-                buyerTable.push(<tr key={i}><td>{i + 1}</td><td>{buyersMap[i]}</td><td>{buyer[0]}</td><td>{buyer[1]}</td><td>{buyer[3]}</td><td>{buyer[2]}</td><td>{buyer[4]}</td><td><a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank">Click Here</a></td>
-                    <td>{buyer.verified.toString()}</td>
+                const addrShort = `${buyersMap[i].slice(0, 8)}...${buyersMap[i].slice(-6)}`;
+                const statusBadge = buyer_verify
+                    ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Verified</span>
+                    : not_verify
+                    ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#f8d7da', color: '#721c24' }}>Rejected</span>
+                    : <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3cd', color: '#856404' }}>Pending</span>;
+                buyerTable.push(<tr key={i}>
+                    <td>{i + 1}</td>
+                    <td><span title={buyersMap[i]} style={{ fontFamily: 'monospace', fontSize: 12 }}>{addrShort}</span></td>
+                    <td>{buyer[0]}</td><td>{buyer[1]}</td><td>{buyer[3]}</td><td>{buyer[2]}</td><td>{buyer[4]}</td>
+                    <td><a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
+                    <td>{statusBadge}</td>
                     <td>
-                        <Button onClick={this.verifyBuyer(buyersMap[i])} disabled={buyer_verify || not_verify} className="button-vote">
+                        <Button onClick={this.verifyBuyer(buyersMap[i])} disabled={buyer_verify || not_verify} size="sm" color="success">
                             Verify
-                    </Button>
+                        </Button>
                     </td>
                     <td>
-                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[3], buyer[0])} disabled={buyer_verify || not_verify} className="btn btn-danger">
-                           Reject
-                    </Button>
+                        <Button onClick={this.NotverifyBuyer(buyersMap[i], buyer[3], buyer[0])} disabled={buyer_verify || not_verify} size="sm" color="danger">
+                            Reject
+                        </Button>
                     </td>
                 </tr>)
 

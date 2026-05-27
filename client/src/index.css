@@ -224,7 +224,7 @@ body, html, .App, #root, .auth-wrapper {
   height: 100%;
 }
 
-.logo{
+.page-logo{
   width: 7%;
   height: 8%;
   float: left;
@@ -337,7 +337,6 @@ body, html, .App, #root, .auth-wrapper {
   color:cornflowerblue;
 }
 
-
 #verified{
   color:green;
 }
@@ -345,3 +344,139 @@ body, html, .App, #root, .auth-wrapper {
 #rejected{
   color:red;
 }
+
+/* ── Light theme overrides ───────────────────────────────── */
+
+/* Stat card text stays white (gradient bg) */
+.icon-section p,
+.icon-section medium,
+.icon-section i { color: #fff !important; }
+
+/* Table header — neutral gray instead of purple */
+.table thead th,
+.table thead.text-primary th {
+  color: #6c757d !important;
+  background-color: #f8f9fa !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  padding: 12px 10px !important;
+}
+
+/* Table body rows */
+.table tbody td {
+  color: #495057 !important;
+  border-color: #f0f2f5 !important;
+  padding: 12px 10px !important;
+  vertical-align: middle !important;
+  font-size: 14px;
+}
+.table tbody tr:hover td {
+  background-color: #f8f9ff !important;
+}
+
+/* Remove the dark bottom strip on stat cards */
+.detail-section { display: none !important; }
+
+/* ── Standardize all buttons to one style ── */
+.btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.2px !important;
+  padding: 9px 18px !important;
+  transition: opacity 0.15s, background 0.15s !important;
+}
+/* All non-destructive buttons → dark navy */
+.btn-primary,
+.btn-success,
+.btn-info,
+.btn-warning,
+.btn-default,
+.btn-fill {
+  background-color: #1e3a5f !important;
+  border-color: #1e3a5f !important;
+  color: #fff !important;
+}
+.btn-primary:hover,
+.btn-success:hover,
+.btn-info:hover,
+.btn-warning:hover,
+.btn-default:hover {
+  background-color: #162d4a !important;
+  border-color: #162d4a !important;
+  color: #fff !important;
+}
+.btn-primary:disabled,
+.btn-success:disabled,
+.btn-info:disabled,
+.btn-warning:disabled {
+  background-color: #94a3b8 !important;
+  border-color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+/* Destructive buttons stay red */
+.btn-danger {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #fff !important;
+}
+.btn-danger:hover {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+.btn-danger:disabled {
+  background-color: #94a3b8 !important;
+  border-color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+/* Outlined sign-out button */
+.btn-outline-danger {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  background: none !important;
+}
+.btn-outline-danger:hover {
+  background-color: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* Form inputs */
+.form-control {
+  background-color: #ffffff !important;
+  border-color: #dee2e6 !important;
+  color: #344675 !important;
+  border-radius: 8px !important;
+}
+.form-control:focus {
+  border-color: #1a5276 !important;
+  box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.12) !important;
+}
+
+/* Card text */
+.card .card-body > p,
+.card .card-body > small { color: #6c757d; }
+
+/* Sidebar nav icon */
+.sidebar .nav li > a i {
+  color: rgba(255,255,255,0.65);
+  font-size: 16px;
+  width: 24px;
+  margin-right: 8px;
+  text-align: center;
+}
+.sidebar .nav li > a:hover i,
+.sidebar .nav li.active > a i { color: #fff; }
+
+/* Wrapper */
+.wrapper {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Main panel */
+.main-panel { overflow-y: auto; }
+

@@ -1,14 +1,15 @@
 .card{
-    background: $card-black-background;
-    border: 0;
+    background: #ffffff;
+    border: 1px solid #e8ecf0;
     position: relative;
     width: 100%;
-    margin-bottom: 30px;
-    box-shadow: $box-shadow;
-
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-radius: 12px;
+    overflow: hidden;
 
     label{
-      color: rgba($white, 0.6);
+      color: #6c757d;
     }
 
     .card-title {
@@ -16,7 +17,7 @@
     }
 
     .card-body{
-      padding: 15px;
+      padding: 20px;
 
       &.table-full-width{
         padding-left: 0;
@@ -24,35 +25,37 @@
       }
 
       .card-title{
-        color: $white;
+        color: #1a1a2e;
         text-transform: inherit;
-        font-weight: $font-weight-light;
+        font-weight: 600;
         margin-bottom: .75rem;
       }
 
       .card-description, .card-category{
-        color: rgba($white, 0.6);
+        color: #6c757d;
       }
 
     }
 
     .card-header{
       &:not([data-background-color]){
-        background-color: transparent;
+        background-color: #ffffff;
       }
-      padding: 15px 15px 0;
+      padding: 16px 20px 12px;
       border: 0;
-      color: rgba($white,0.8);
+      border-bottom: 1px solid #f0f2f5;
+      color: #344675;
 
       .card-title{
-          color: $white;
-          font-weight: 100;
+          color: #1a1a2e;
+          font-weight: 700;
+          font-size: 15px;
       }
 
       .card-category{
-        color: $dark-gray;
+        color: #9a9a9a;
         margin-bottom: 5px;
-        font-weight: 300;
+        font-weight: 400;
       }
     }
 
@@ -198,9 +201,9 @@
     }
 
     .card-footer{
-        background-color: transparent;
-        border: 0;
-        padding: 15px;
+        background-color: #fafbfc;
+        border-top: 1px solid #f0f2f5;
+        padding: 12px 20px;
 
 
         .stats{
