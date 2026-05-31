@@ -21,8 +21,8 @@ INSERT OR IGNORE INTO land_records (property_pid, survey_number, area, city, sta
 
 -- 8 Bank Accounts (one per real citizen, none for fake)
 INSERT OR IGNORE INTO bank_accounts (account_number, ifsc, bank_name, holder_name, aadhar_linked, pan_linked, balance, account_type, branch, is_active) VALUES
-('SBI-1001-2024', 'SBIN0001234', 'State Bank of India', 'Rahul Sharma', '123456789012', 'ABCDE1234F', 5000000, 'Savings', 'Indiranagar Branch', 1),
-('HDFC-2002-2024', 'HDFC0005678', 'HDFC Bank', 'Priya Patel', '234567890123', 'BCDEF2345G', 8500000, 'Savings', 'Marine Drive Branch', 1),
+('SBI-1001-2024', 'SBIN0001234', 'State Bank of India', 'Rahul Sharma', '123456789012', 'ABCDE1234F', 50000000, 'Savings', 'Indiranagar Branch', 1),
+('HDFC-2002-2024', 'HDFC0005678', 'HDFC Bank', 'Priya Patel', '234567890123', 'BCDEF2345G', 100000000, 'Savings', 'Marine Drive Branch', 1),
 ('ICICI-3003-2024', 'ICIC0009012', 'ICICI Bank', 'Amit Kumar', '345678901234', 'CDEFG3456H', 25000000, 'Current', 'Connaught Place Branch', 1),
 ('AXIS-4004-2024', 'UTIB0003456', 'Axis Bank', 'Sneha Reddy', '456789012345', 'DEFGH4567I', 12000000, 'Savings', 'Banjara Hills Branch', 1),
 ('BOB-5005-2024', 'BARB0007890', 'Bank of Baroda', 'Vikram Singh', '567890123456', 'EFGHI5678J', 35000000, 'Current', 'MI Road Branch', 1),

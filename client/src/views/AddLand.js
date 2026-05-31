@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import LandContract from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import fileUpload from '../ipfs';
-import * as govApi from '../services/govApi';
 import { getWalletAddress } from '../services/authService';
 import {
   Button,
@@ -70,22 +69,15 @@ class AddLand extends Component {
       city: '',
       stateLoc: '',
       price: '',
-      lands: null,
-      verficationStatus: false,
       verified: '',
       registered: '',
-      buffer: null,
       file: null,
       ipfsHash: '',
       propertyPID: '',
       surveyNum: '',
-      buffer2: null,
       file2: null,
       document: '',
-      govLandData: null,
-      landLookupDone: false,
-      hasEncumbrance: false,
-      hasLitigation: false,
+      formError: '',
     }
     this.captureFile = this.captureFile.bind(this);
     this.addimage = this.addimage.bind(this);
@@ -95,9 +87,7 @@ class AddLand extends Component {
 
   componentDidMount = async () => {
     try {
-      //Get network provider and web3 instance
       const web3 = await getWeb3();
-
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = LandContract.networks[networkId];
       const instance = new web3.eth.Contract(
@@ -105,49 +95,19 @@ class AddLand extends Component {
         deployedNetwork && deployedNetwork.address,
       );
 
-      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
       const currentAddress = getWalletAddress();
-      console.log(currentAddress);
-      this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
+      this.setState({ LandInstance: instance, web3: web3, account: currentAddress });
       var verified = await instance.methods.isVerified(currentAddress).call();
-      console.log(verified);
       this.setState({ verified: verified });
       var registered = await instance.methods.isSeller(currentAddress).call();
-      console.log(registered);
       this.setState({ registered: registered });
-
-
     } catch (error) {
-      // Catch any errors for any of the above operations.
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
       );
       console.error(error);
     }
   };
-
-  lookupLand = async () => {
-    if (!this.state.propertyPID) {
-      alert("Please enter a Property PID first.");
-      return;
-    }
-    const result = await govApi.lookupLand(this.state.propertyPID);
-    if (result.found) {
-      this.setState({
-        govLandData: result,
-        landLookupDone: true,
-        area: result.record.area ? String(result.record.area) : this.state.area,
-        city: result.record.city || this.state.city,
-        stateLoc: result.record.state || this.state.stateLoc,
-        surveyNum: result.record.survey_number || this.state.surveyNum,
-        hasEncumbrance: result.record.has_encumbrance || false,
-        hasLitigation: result.record.has_litigation || false,
-      });
-    } else {
-      this.setState({ govLandData: result, landLookupDone: true, hasEncumbrance: false, hasLitigation: false });
-      alert(result.message || "Land not found in government records.");
-    }
-  }
 
   addimage = async () => {
     if (!this.state.file) {
@@ -157,12 +117,12 @@ class AddLand extends Component {
     try {
       const result = await fileUpload.upload(this.state.file);
       this.setState({ ipfsHash: result.fileId || '' });
-      console.log('ipfsHash:', result.fileId);
     } catch (e) {
       console.error('Image upload failed:', e.message);
       this.setState({ ipfsHash: '' });
     }
   }
+
   addDoc = async () => {
     if (!this.state.file2) {
       this.setState({ document: '' });
@@ -171,7 +131,6 @@ class AddLand extends Component {
     try {
       const result = await fileUpload.upload(this.state.file2);
       this.setState({ document: result.fileId || '' });
-      console.log('document:', result.fileId);
     } catch (e) {
       console.error('Document upload failed:', e.message);
       this.setState({ document: '' });
@@ -179,43 +138,47 @@ class AddLand extends Component {
   }
 
   addLand = async () => {
+    const { area, city, stateLoc, price, propertyPID, surveyNum } = this.state;
+
+    if (!area.trim() || !city.trim() || !stateLoc.trim() || !price.trim() || !propertyPID.trim() || !surveyNum.trim()) {
+      this.setState({ formError: 'All fields are compulsory!' });
+      return;
+    }
+    if (!Number(area) || Number(area) <= 0) {
+      this.setState({ formError: 'Land area must be a positive number.' });
+      return;
+    }
+    if (!Number(price) || Number(price) <= 0) {
+      this.setState({ formError: 'Price must be a positive number.' });
+      return;
+    }
+
+    this.setState({ formError: '' });
+
     await this.addimage();
     await this.addDoc();
-    if (this.state.area == '' || this.state.city == '' || this.state.stateLoc == '' || this.state.price == '' || this.state.propertyPID == '' || this.state.surveyNum == '') {
-      alert("All the fields are compulsory!");
-    } else if ((!Number(this.state.area)) || (!Number(this.state.price))) {
-      alert("Land area and Price of Land must be a number!");
-    } else if (this.state.hasEncumbrance || this.state.hasLitigation) {
-      alert("Cannot register: this land has encumbrance or litigation issues!");
-    } else {
-      // Check for duplicates in govt records
-      const dupCheck = await govApi.checkDuplicate(this.state.propertyPID, this.state.surveyNum);
-      if (dupCheck.isDuplicate) {
-        alert("This land is already registered in government records!");
-        return;
-      }
 
+    try {
       await this.state.LandInstance.methods.addLand(
-        this.state.area,
-        this.state.city,
-        this.state.stateLoc,
-        this.state.price,
-        this.state.propertyPID,
-        this.state.surveyNum,
+        area.trim(),
+        city.trim(),
+        stateLoc.trim(),
+        price.trim(),
+        propertyPID.trim(),
+        surveyNum.trim(),
         this.state.ipfsHash,
         this.state.document)
         .send({
           from: this.state.account,
           gas: 2100000
-        }).then(async (response) => {
-          // Mark as registered in govt records
-          const txHash = response.transactionHash || '';
-          await govApi.markRegistered(this.state.propertyPID, txHash);
+        }).then(() => {
           window.location.href = "/seller/dashboard";
         });
+    } catch (e) {
+      console.error(e);
+      this.setState({ formError: 'Registration failed: ' + (e.message || 'Check console') });
     }
   }
-  // _city,string  _state, uint landPrice, uint _propertyPID,uint _surveyNum,string memory _ipfsHash
 
   updateArea = event => (
     this.setState({ area: event.target.value })
@@ -255,7 +218,6 @@ class AddLand extends Component {
               <Spinner animation="border" variant="primary" />
             </h1>
           </div>
-
         </div>
       );
     }
@@ -270,13 +232,12 @@ class AddLand extends Component {
                   <CardBody>
                     <h1>
                       You are not verified to view this page
-                                        </h1>
+                    </h1>
                   </CardBody>
                 </Card>
               </Col>
             </Row>
           </div>
-
         </div>
       );
     }
@@ -303,7 +264,6 @@ class AddLand extends Component {
                         />
                       </FormGroup>
                     </Col>
-
                   </Row>
                   <Row>
                     <Col md="12">
@@ -343,9 +303,9 @@ class AddLand extends Component {
                   <Row>
                     <Col md="12">
                       <FormGroup>
-                        <label>Price (in ₹)</label>
+                        <label>Price (in INR)</label>
                         <Input
-                          placeholder="e.g. 5000000 for ₹50,00,000"
+                          placeholder="e.g. 5000000"
                           type="number"
                           min="1"
                           value={this.state.price}
@@ -359,22 +319,11 @@ class AddLand extends Component {
                       <FormGroup>
                         <label>Property PID Number</label>
                         <Input
-                          placeholder="Property PID"
+                          placeholder="e.g. PID-MH-2024-002"
                           type="text"
                           value={this.state.propertyPID}
                           onChange={this.updatePID}
                         />
-                        <Button color="info" size="sm" style={{marginTop: '5px'}} onClick={this.lookupLand}>
-                          Lookup in Govt Records
-                        </Button>
-                        {this.state.govLandData && this.state.govLandData.found && (
-                          <span style={{marginLeft: '10px', color: 'green', fontWeight: 'bold'}}>Land found in records</span>
-                        )}
-                        {(this.state.hasEncumbrance || this.state.hasLitigation) && (
-                          <div style={{color: 'red', fontWeight: 'bold', marginTop: '5px'}}>
-                            WARNING: This land has {this.state.hasEncumbrance ? 'encumbrance' : ''}{this.state.hasEncumbrance && this.state.hasLitigation ? ' and ' : ''}{this.state.hasLitigation ? 'litigation' : ''} issues. Registration is disabled.
-                          </div>
-                        )}
                       </FormGroup>
                     </Col>
                   </Row>
@@ -416,7 +365,12 @@ class AddLand extends Component {
                 </Form>
               </CardBody>
               <CardFooter>
-                <Button className="btn-fill" color="primary" onClick={this.addLand} disabled={this.state.hasEncumbrance || this.state.hasLitigation}>
+                {this.state.formError && (
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fff0f0', border: '1px solid #ffcccc', color: '#c0392b', fontSize: 13, marginBottom: 12 }}>
+                    {this.state.formError}
+                  </div>
+                )}
+                <Button className="btn-fill" color="primary" onClick={this.addLand}>
                   Add Land
                 </Button>
               </CardFooter>
@@ -425,7 +379,6 @@ class AddLand extends Component {
         </Row>
       </div>
     );
-
   }
 }
 

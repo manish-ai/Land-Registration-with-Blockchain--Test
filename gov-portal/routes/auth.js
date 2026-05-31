@@ -1,6 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const Web3 = require('web3');
+const path = require('path');
+const fs = require('fs');
+
+// Load contract ABI for role detection
+let LandABI = null;
+let LandAddress = null;
+try {
+    const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'client', 'src', 'artifacts', 'Land.json'), 'utf8'));
+    LandABI = artifact.abi;
+    const networkId = Object.keys(artifact.networks)[0];
+    if (networkId) LandAddress = artifact.networks[networkId].address;
+} catch (e) { /* contract not deployed yet */ }
+
+async function detectRoleFromBlockchain(walletAddress) {
+    if (!LandABI || !LandAddress) return null;
+    try {
+        const web3 = new Web3('http://localhost:7545');
+        const contract = new web3.eth.Contract(LandABI, LandAddress);
+        const isInspector = await contract.methods.isLandInspector(walletAddress).call();
+        if (isInspector) return 'inspector';
+        const isSeller = await contract.methods.isSeller(walletAddress).call();
+        if (isSeller) return 'seller';
+        const isBuyer = await contract.methods.isBuyer(walletAddress).call();
+        if (isBuyer) return 'buyer';
+    } catch (e) { /* blockchain unavailable */ }
+    return null;
+}
 
 // In-memory stores (demo — reset on server restart)
 const otpStore = new Map();    // identifier -> { otp, expiresAt }
@@ -49,7 +77,7 @@ router.post('/send-otp', (req, res) => {
 
 // POST /api/auth/verify-otp
 // Body: { identifier, type, otp }
-router.post('/verify-otp', (req, res) => {
+router.post('/verify-otp', async (req, res) => {
     const { identifier, type, otp } = req.body;
     if (!identifier || !type || !otp) {
         return res.status(400).json({ error: 'identifier, type and otp are required' });
@@ -81,22 +109,31 @@ router.post('/verify-otp', (req, res) => {
 
     otpStore.delete(identifier);
 
+    // Detect role from blockchain if not set in DB
+    let role = citizen.role;
+    if (!role && citizen.wallet_address) {
+        role = await detectRoleFromBlockchain(citizen.wallet_address);
+        if (role) {
+            db.prepare('UPDATE citizens SET role = ? WHERE aadhar_number = ?').run(role, citizen.aadhar_number);
+        }
+    }
+
     const token = uuidv4();
     const sessionData = {
         walletAddress: citizen.wallet_address,
-        role: citizen.role,
+        role: role,
         name: citizen.name,
         aadharNumber: citizen.aadhar_number,
     };
     sessionStore.set(token, sessionData);
 
-    console.log(`[Auth] Login: ${citizen.name} (${citizen.role}) at ${citizen.wallet_address}`);
+    console.log(`[Auth] Login: ${citizen.name} (${role}) at ${citizen.wallet_address}`);
 
     return res.json({
         success: true,
         token,
         walletAddress: citizen.wallet_address,
-        role: citizen.role,
+        role: role,
         name: citizen.name,
     });
 });

@@ -152,7 +152,7 @@ class BuyerInfo extends Component {
                     <td>{i + 1}</td>
                     <td><span title={buyersMap[i]} style={{ fontFamily: 'monospace', fontSize: 12 }}>{addrShort}</span></td>
                     <td>{buyer[0]}</td><td>{buyer[1]}</td><td>{buyer[3]}</td><td>{buyer[2]}</td><td>{buyer[4]}</td>
-                    <td><a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
+                    <td>{buyer[5] ? <a href={`http://localhost:4002/api/files/${buyer[5]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a> : ''}</td>
                     <td>{statusBadge}</td>
                     <td>
                         {!buyer_verify && !not_verify && (

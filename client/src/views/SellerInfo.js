@@ -126,7 +126,7 @@ class SellerInfo extends Component {
                     <td>{i + 1}</td>
                     <td><span title={sellersMap[i]} style={{ fontFamily: 'monospace', fontSize: 12 }}>{addrShort}</span></td>
                     <td>{seller[0]}</td><td>{seller[1]}</td><td>{seller[2]}</td><td>{seller[3]}</td>
-                    <td><a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a></td>
+                    <td>{seller[4] ? <a href={`http://localhost:4002/api/files/${seller[4]}`} target="_blank" rel="noreferrer" style={{ color: '#1a5276', fontWeight: 600 }}>View</a> : ''}</td>
                     <td>{statusBadge}</td>
                     <td>
                         {!seller_verify && !not_verify && (

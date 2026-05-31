@@ -1,24 +1,13 @@
 import React, { Component } from "react";
-// nodejs library that concatenates classes
-import classNames from "classnames";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress } from '../services/authService';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
 import { Spinner } from 'react-bootstrap'
-import {
-  LoadingContainer,
-  AccountData,
-  ContractData,
-  ContractForm
-} from '../drizzle-shims/drizzle-react-components'
 import "../index.css";
 import * as govApi from '../services/govApi';
-// reactstrap components
 import {
   Button,
-  ButtonGroup,
   Card,
   CardHeader,
   CardBody,
@@ -26,15 +15,7 @@ import {
   Table,
   Row,
   Col,
-  UncontrolledTooltip,
 } from "reactstrap";
-
-
-
-const drizzleOptions = {
-  contracts: [Land]
-}
-
 
 
 class Dashboard extends Component {
@@ -45,68 +26,98 @@ class Dashboard extends Component {
       LandInstance: undefined,
       account: null,
       web3: null,
-      count: 0,
-      requested: false,
-      bankReceipt: null,
-      row: [],
+      registered: false,
+      payments: [],
+      // UI feedback
+      toast: null,       // { type: 'success'|'error'|'info', message: string }
+      processingId: null, // reqId currently being processed
     }
   }
 
+  showToast = (type, message) => {
+    this.setState({ toast: { type, message } });
+    if (type === 'success') {
+      setTimeout(() => this.setState({ toast: null }), 6000);
+    }
+  }
 
-  makePayment = (seller_address, landPID, amount, reqId) => async () => {
-    // Resolve Aadhar numbers via verificationId stored on-chain (Bug 2 fix)
-    const buyerDetails = await this.state.LandInstance.methods.getBuyerDetails(this.state.account).call();
-    const sellerDetails = await this.state.LandInstance.methods.getSellerDetails(seller_address).call();
-    const buyerVerifId = buyerDetails[4];
-    const sellerVerifId = sellerDetails[3];
+  dismissToast = () => {
+    this.setState({ toast: null });
+  }
 
-    const buyerAadharRes = await govApi.getAadharByVerificationId(buyerVerifId);
-    const sellerAadharRes = await govApi.getAadharByVerificationId(sellerVerifId);
+  makePayment = (payment) => async () => {
+    const { seller, landPID, price, reqId } = payment;
+    this.setState({ processingId: reqId, toast: null });
 
-    if (!buyerAadharRes.found || !sellerAadharRes.found) {
-      alert('Could not resolve Aadhar numbers for bank transfer. Proceeding without bank validation.');
-    } else {
-      // Process bank transfer with real Aadhar numbers (Bug 2 fix)
+    try {
+      // Step 1: Resolve Aadhar numbers
+      const buyerDetails = await this.state.LandInstance.methods.getBuyerDetails(this.state.account).call();
+      const sellerDetails = await this.state.LandInstance.methods.getSellerDetails(seller).call();
+
+      const buyerAadharRes = await govApi.getAadharByVerificationId(buyerDetails[4]);
+      const sellerAadharRes = await govApi.getAadharByVerificationId(sellerDetails[3]);
+
+      if (!buyerAadharRes.found || !sellerAadharRes.found) {
+        this.showToast('error', 'Could not resolve Aadhar numbers for bank transfer. Please contact support.');
+        this.setState({ processingId: null });
+        return;
+      }
+
+      // Step 2: Process bank payment
       const bankResult = await govApi.processPayment(
         buyerAadharRes.aadharNumber,
         sellerAadharRes.aadharNumber,
-        amount,
+        price,
         landPID
       );
+
       if (!bankResult.success) {
-        // Bug 3 fix: show error if bank payment fails
-        alert('Bank transfer failed: ' + (bankResult.message || 'Unknown error'));
+        let errorMsg = bankResult.message || 'Unknown error';
+        if (bankResult.buyerBalance !== undefined && bankResult.requiredAmount !== undefined) {
+          errorMsg += ` (Your balance: ₹${Number(bankResult.buyerBalance).toLocaleString('en-IN')}, Required: ₹${Number(bankResult.requiredAmount).toLocaleString('en-IN')})`;
+        }
+        this.showToast('error', errorMsg);
+        this.setState({ processingId: null });
         return;
       }
-      this.setState({ bankReceipt: bankResult.transactionId || bankResult.txnId || 'N/A' });
-    }
 
-    // Bug 15 fix: use nominal 0.001 ETH on-chain instead of full INR-converted amount
-    const nominalEth = '0.001';
-    await this.state.LandInstance.methods.payment(
-      seller_address,
-      reqId
-    ).send({
-      from: this.state.account,
-      value: this.state.web3.utils.toWei(nominalEth, "ether"),
-      gas: 2100000
-    }).then(() => {
-      const receipt = this.state.bankReceipt;
-      alert('Payment complete!' + (receipt ? ' Bank TXN ID: ' + receipt : ''));
-      window.location.reload(false);
-    });
+      // Step 3: Record on blockchain
+      const nominalEth = '0.001';
+      await this.state.LandInstance.methods.payment(
+        seller,
+        reqId
+      ).send({
+        from: this.state.account,
+        value: this.state.web3.utils.toWei(nominalEth, "ether"),
+        gas: 2100000
+      });
+
+      const txnId = bankResult.transactionId || bankResult.txnId || '';
+      this.showToast('success', 'Payment successful!' + (txnId ? ' Bank TXN: ' + txnId : ''));
+      // Update the paid status locally
+      this.setState(prev => ({
+        processingId: null,
+        payments: prev.payments.map(p => p.reqId === reqId ? { ...p, paid: true } : p)
+      }));
+
+    } catch (err) {
+      console.error('Payment error:', err);
+      let msg = 'Payment failed. ';
+      if (err.message && err.message.includes('revert')) {
+        msg += 'Transaction was rejected by the smart contract.';
+      } else if (err.message && err.message.includes('User denied')) {
+        msg += 'Transaction was cancelled.';
+      } else {
+        msg += (err.message || 'Please try again.');
+      }
+      this.showToast('error', msg);
+      this.setState({ processingId: null });
+    }
   }
 
   componentDidMount = async () => {
-    if (false) {
-    }
-
     try {
-      //Get network provider and web3 instance
       const web3 = await getWeb3();
-
-      const accounts = await web3.eth.getAccounts();
-
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = Land.networks[networkId];
       const instance = new web3.eth.Contract(
@@ -117,61 +128,44 @@ class Dashboard extends Component {
       this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
       const currentAddress = getWalletAddress();
-      console.log(currentAddress);
       var registered = await instance.methods.isBuyer(currentAddress).call();
-      console.log(registered);
       this.setState({ registered: registered });
 
       var requestsCount = await instance.methods.getRequestsCount().call();
       requestsCount = parseInt(requestsCount);
 
-      const rowItems = [];
+      const payments = [];
       for (let i = 1; i <= requestsCount; i++) {
         var request = await instance.methods.getRequestDetails(i).call();
-        // request: [sellerId, buyerId, landId, requestStatus]
         if (request[1].toLowerCase() !== currentAddress.toLowerCase()) continue;
         if (!request[3]) continue; // not approved yet
 
         var paid = await instance.methods.isPaid(i).call();
-        var price = await instance.methods.getPrice(request[2]).call();
+        var price = parseInt(await instance.methods.getPrice(request[2]).call());
         var landPID = await instance.methods.getPID(request[2]).call();
-        const priceFormatted = '₹' + parseInt(price).toLocaleString('en-IN');
-        rowItems.push(<tr key={i}><td>{i}</td><td>{request[0]}</td><td>{priceFormatted}</td>
-          <td>
-            <Button onClick={this.makePayment(request[0], landPID, price, i)}
-            disabled={paid} className="btn btn-success">
-              {paid ? 'Paid' : 'Make Payment'}
-            </Button>
-          </td>
-        </tr>)
+        var city = await instance.methods.getCity(request[2]).call();
+        var state = await instance.methods.getState(request[2]).call();
+        let sellerName = request[0];
+        try {
+          const sellerDetails = await instance.methods.getSellerDetails(request[0]).call();
+          if (sellerDetails[0]) sellerName = sellerDetails[0];
+        } catch (e) { /* fallback to address */ }
 
+        payments.push({ reqId: i, seller: request[0], sellerName, landPID, city, state, price, paid });
       }
-      this.setState({ row: rowItems });
-
-
-
+      this.setState({ payments });
 
     } catch (error) {
-      // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
       console.error(error);
+      this.showToast('error', 'Failed to load contract data. Make sure Ganache is running and the contract is deployed.');
     }
   };
-
-
 
   render() {
     if (!this.state.web3) {
       return (
-        <div>
-          <div>
-            <h1>
-              <Spinner animation="border" variant="primary" />
-            </h1>
-          </div>
-
+        <div className="content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <Spinner animation="border" variant="primary" />
         </div>
       );
     }
@@ -179,59 +173,119 @@ class Dashboard extends Component {
     if (!this.state.registered) {
       return (
         <div className="content">
-          <div>
-            <Row>
-              <Col xs="6">
-                <Card className="card-chart">
-                  <CardBody>
-                    <h1>
-                      You are not verified to view this page
-                                        </h1>
-                  </CardBody>
-                </Card>
-              </Col>
-            </Row>
-          </div>
-
+          <Row><Col xs="6">
+            <Card><CardBody>
+              <h4 style={{ color: '#e14eca' }}>You are not verified to view this page.</h4>
+            </CardBody></Card>
+          </Col></Row>
         </div>
       );
     }
 
+    const { toast, payments, processingId } = this.state;
+
     return (
       <>
         <div className="content">
-          <DrizzleProvider options={drizzleOptions}>
-            <LoadingContainer>
-              <Row>
-                <Col lg="12" md="12">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle tag="h4">Payment for Lands</CardTitle>
+          {/* Toast notification */}
+          {toast && (
+            <Row>
+              <Col lg="12">
+                <div style={{
+                  background: toast.type === 'success' ? '#f0fdf4' : toast.type === 'error' ? '#fef2f2' : '#eff6ff',
+                  border: `1px solid ${toast.type === 'success' ? '#bbf7d0' : toast.type === 'error' ? '#fecaca' : '#bfdbfe'}`,
+                  borderRadius: 8,
+                  padding: '14px 18px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>
+                      {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
+                    </span>
+                    <div>
+                      <strong style={{
+                        color: toast.type === 'success' ? '#166534' : toast.type === 'error' ? '#991b1b' : '#1e40af',
+                        fontSize: 14,
+                      }}>
+                        {toast.type === 'success' ? 'Payment Successful' : toast.type === 'error' ? 'Payment Failed' : 'Info'}
+                      </strong>
+                      <p style={{
+                        color: toast.type === 'success' ? '#15803d' : toast.type === 'error' ? '#b91c1c' : '#1d4ed8',
+                        fontSize: 13, margin: '4px 0 0 0',
+                      }}>
+                        {toast.message}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={this.dismissToast} style={{
+                    background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1,
+                    color: toast.type === 'success' ? '#166534' : toast.type === 'error' ? '#991b1b' : '#1e40af',
+                    padding: 0,
+                  }}>×</button>
+                </div>
+              </Col>
+            </Row>
+          )}
 
-                    </CardHeader>
-                    <CardBody>
-                      <Table className="tablesorter" responsive color="black">
-                        <thead className="text-primary">
-                          <tr>
-                            <th>#</th>
-                            <th>Land Owner</th>
-                            <th>Price ( in ₹ )</th>
-                            <th>Make Payment</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {this.state.row}
-                        </tbody>
-                      </Table>
-                    </CardBody>
-                  </Card>
-                </Col>
-              </Row>
-            </LoadingContainer>
-          </DrizzleProvider>
+          <Row>
+            <Col lg="12" md="12">
+              <Card>
+                <CardHeader>
+                  <CardTitle tag="h4">Payment for Lands</CardTitle>
+                </CardHeader>
+                <CardBody>
+                  <Table className="tablesorter" responsive>
+                    <thead className="text-primary">
+                      <tr>
+                        <th>#</th>
+                        <th>Land Owner</th>
+                        <th>Property</th>
+                        <th>Price (₹)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.length > 0 ? payments.map(p => (
+                        <tr key={p.reqId}>
+                          <td>{p.reqId}</td>
+                          <td>{p.sellerName}</td>
+                          <td>{p.landPID}<br /><small style={{ color: '#888' }}>{p.city}, {p.state}</small></td>
+                          <td>₹{p.price.toLocaleString('en-IN')}</td>
+                          <td>
+                            {p.paid ? (
+                              <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>
+                                Paid
+                              </span>
+                            ) : (
+                              <Button
+                                onClick={this.makePayment(p)}
+                                disabled={processingId === p.reqId}
+                                color="success"
+                                size="sm"
+                                className="btn-fill"
+                              >
+                                {processingId === p.reqId ? 'Processing...' : 'Make Payment'}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: 20 }}>
+                          No approved payments pending. Offers must be accepted by the seller before payment.
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </CardBody>
+              </Card>
+            </Col>
+          </Row>
         </div>
       </>
-
     );
   }
 }

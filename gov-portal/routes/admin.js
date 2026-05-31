@@ -163,13 +163,13 @@ router.post('/land-records', (req, res) => {
         const db = req.app.locals.db;
         const { property_pid, survey_number, area, city, state, district, taluk, village, owner_name, owner_aadhar, registration_date, market_value, land_type, has_encumbrance, has_litigation, is_registered_on_chain, latitude, longitude } = req.body;
 
-        if (!property_pid || !survey_number || !area || !city || !state || !owner_name || !owner_aadhar || !market_value) {
-            return res.status(400).json({ error: 'property_pid, survey_number, area, city, state, owner_name, owner_aadhar, and market_value are required' });
+        if (!property_pid || !survey_number || !area || !city || !state || !market_value) {
+            return res.status(400).json({ error: 'property_pid, survey_number, area, city, state, and market_value are required' });
         }
 
         const result = db.prepare(
             'INSERT INTO land_records (property_pid, survey_number, area, city, state, district, taluk, village, owner_name, owner_aadhar, registration_date, market_value, land_type, has_encumbrance, has_litigation, is_registered_on_chain, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(property_pid, survey_number, area, city, state, district || null, taluk || null, village || null, owner_name, owner_aadhar, registration_date || null, market_value, land_type || null, has_encumbrance || 0, has_litigation || 0, is_registered_on_chain || 0, latitude || null, longitude || null);
+        ).run(property_pid, survey_number, area, city, state, district || null, taluk || null, village || null, owner_name || '', owner_aadhar || '', registration_date || null, market_value, land_type || null, has_encumbrance || 0, has_litigation || 0, is_registered_on_chain || 0, latitude || null, longitude || null);
 
         const record = db.prepare('SELECT * FROM land_records WHERE id = ?').get(result.lastInsertRowid);
         res.status(201).json(record);
@@ -177,6 +177,9 @@ router.post('/land-records', (req, res) => {
         console.error('Create land record error:', err);
         if (err.message && err.message.includes('UNIQUE')) {
             return res.status(409).json({ error: 'Land record with this PID or survey number already exists' });
+        }
+        if (err.message && err.message.includes('FOREIGN KEY')) {
+            return res.status(400).json({ error: 'Owner Aadhar must match an existing citizen in the database' });
         }
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -224,6 +227,9 @@ router.put('/land-records/:id', (req, res) => {
         console.error('Update land record error:', err);
         if (err.message && err.message.includes('UNIQUE')) {
             return res.status(409).json({ error: 'PID or survey number already exists for another record' });
+        }
+        if (err.message && err.message.includes('FOREIGN KEY')) {
+            return res.status(400).json({ error: 'Owner Aadhar must match an existing citizen in the database' });
         }
         res.status(500).json({ error: 'Internal server error' });
     }

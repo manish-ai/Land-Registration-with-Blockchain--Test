@@ -1,4 +1,5 @@
 import LIDashboard from "./views/LIDashboard";
+import LandVerifications from "./views/LandVerifications";
 import ApproveTransaction from "./views/ApproveTransaction";
 import BuyerInfo from "./views/BuyerInfo";
 import SellerInfo from "./views/SellerInfo";
@@ -11,6 +12,13 @@ var routes = [
     name: "Dashboard",
     icon: "tim-icons icon-chart-pie-36",
     component: LIDashboard,
+    layout: "/admin",
+  },
+  {
+    path: "/land-verifications",
+    name: "Land Verifications",
+    icon: "tim-icons icon-badge",
+    component: LandVerifications,
     layout: "/admin",
   },
   {

@@ -96,7 +96,7 @@ class updateBuyer extends Component {
                 </Col>
               </Row>
               );
-            this.setState({name: buyer[0], age: buyer[1], city: buyer[2], email: buyer[3], buyerTable: buyerTableEl, verification: verificationEl });
+            this.setState({name: buyer[0], age: buyer[1], city: buyer[2], email: buyer[3], buyerTable: buyerTableEl, verification: verificationEl, verified: buyer_verify });
 
         } catch (error) {
             // Catch any errors for any of the above operations.
@@ -107,10 +107,13 @@ class updateBuyer extends Component {
         }
     };
     updateBuyer = async () => {
-      if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.email == '') {
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!this.state.name.trim() || !this.state.age || !this.state.city.trim() || !this.state.email.trim()) {
           alert("All the fields are compulsory!");
-      } else if (!Number(this.state.age)) {
-          alert("Your age must be a number");
+      } else if (!Number(this.state.age) || Number(this.state.age) < 18 || Number(this.state.age) > 120) {
+          alert("Age must be a number between 18 and 120");
+      } else if (!emailPattern.test(this.state.email.trim())) {
+          alert("Please enter a valid email address");
       }
       else{
           await this.state.LandInstance.methods.updateBuyer(
@@ -222,7 +225,7 @@ class updateBuyer extends Component {
                         </Form>
                       </CardBody>
                       <CardFooter>
-                        <Button onClick={this.updateBuyer} className="btn-fill" color="primary">
+                        <Button onClick={this.updateBuyer} className="btn-fill" color="primary" disabled={!this.state.verified}>
                           Update
                       </Button>
                       </CardFooter>

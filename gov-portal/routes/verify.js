@@ -62,6 +62,7 @@ router.post('/aadhar', (req, res) => {
         res.json({
             verified: true,
             verificationId,
+            walletAddress: citizen.wallet_address || null,
             citizen: {
                 name: citizen.name,
                 age: citizen.age,

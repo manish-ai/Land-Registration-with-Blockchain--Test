@@ -97,7 +97,7 @@ class updateSeller extends Component {
                 </Col>
               </Row>
               );
-            this.setState({name: seller[0], age: seller[1], landsOwned: seller[2], sellerTable: sellerTableEl, verification: verificationEl });
+            this.setState({name: seller[0], age: seller[1], landsOwned: seller[2], sellerTable: sellerTableEl, verification: verificationEl, verified: seller_verify });
 
         }catch (error) {
             // Catch any errors for any of the above operations.
@@ -109,10 +109,12 @@ class updateSeller extends Component {
     };
 
     updateSeller = async () => {
-        if (this.state.name == '' || this.state.age == '' || this.state.landsOwned == '') {
+        if (!this.state.name.trim() || !this.state.age || !this.state.landsOwned.toString().trim()) {
             alert("All the fields are compulsory!");
-        } else if (!Number(this.state.age)) {
-            alert("Your age must be a number");
+        } else if (!Number(this.state.age) || Number(this.state.age) < 21 || Number(this.state.age) > 120) {
+            alert("Age must be a number between 21 and 120");
+        } else if (isNaN(this.state.landsOwned) || Number(this.state.landsOwned) < 0) {
+            alert("Owned Lands must be a non-negative number");
         } else {
             await this.state.LandInstance.methods.updateSeller(
                 this.state.name,
@@ -208,7 +210,7 @@ class updateSeller extends Component {
                                         </Form>
                                     </CardBody>
                                     <CardFooter>
-                                        <Button onClick={this.updateSeller} className="btn-fill" color="primary">
+                                        <Button onClick={this.updateSeller} className="btn-fill" color="primary" disabled={!this.state.verified}>
                                             Update
                                         </Button>
                                     </CardFooter>

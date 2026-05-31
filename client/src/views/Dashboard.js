@@ -1,30 +1,19 @@
 import React, { Component } from "react";
-// nodejs library that concatenates classes
-import classNames from "classnames";
+import ReactDOM from "react-dom";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress } from '../services/authService';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import { Spinner } from 'react-bootstrap'
-// reactstrap components
 import {
   Button,
-  ButtonGroup,
   Card,
   CardHeader,
   CardBody,
   CardTitle,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
-  UncontrolledDropdown,
-  Label,
-  FormGroup,
-  Input,
   Table,
   Row,
   Col,
-  UncontrolledTooltip,
 } from "reactstrap";
 import "../card.css";
 
@@ -40,40 +29,54 @@ class Dashboard extends Component {
       web3: null,
       count: 0,
       requested: false,
-      row: [],
+      lands: [],
       totalLands: 0,
       myRequestCount: 0,
+      // Offer modal state
+      showOfferModal: false,
+      selectedLand: null,
+      offerPrice: '',
+      offerError: '',
+      requesting: false,
     }
   }
 
-  requestLand = (seller_address, land_id) => async () => {
+  openOfferModal = (land) => {
+    this.setState({ showOfferModal: true, selectedLand: land, offerPrice: '', offerError: '', requesting: false });
+  }
 
-    console.log(seller_address);
-    console.log(land_id);
-    // this.setState({requested: true});
-    // requested = true;
-    await this.state.LandInstance.methods.requestLand(
-      seller_address,
-      land_id
-    ).send({
-      from: this.state.account,
-      gas: 2100000
-    }).then(response => {
-      // navigation handled by reload below
-    });
+  closeOfferModal = () => {
+    this.setState({ showOfferModal: false, selectedLand: null, offerPrice: '', offerError: '', requesting: false });
+  }
 
-    //Reload
-    window.location.reload(false);
-
+  submitOffer = async () => {
+    const { selectedLand, offerPrice, LandInstance, account } = this.state;
+    const price = parseInt(offerPrice);
+    if (!offerPrice || isNaN(price) || price <= 0) {
+      this.setState({ offerError: 'Please enter a valid offer price greater than 0.' });
+      return;
+    }
+    this.setState({ requesting: true, offerError: '' });
+    try {
+      await LandInstance.methods.requestLand(
+        selectedLand.owner,
+        selectedLand.id,
+        price
+      ).send({
+        from: account,
+        gas: 2100000
+      });
+      this.closeOfferModal();
+      window.location.reload(false);
+    } catch (err) {
+      console.error(err);
+      this.setState({ offerError: 'Transaction failed. Please try again.', requesting: false });
+    }
   }
 
   componentDidMount = async () => {
     try {
-      //Get network provider and web3 instance
       const web3 = await getWeb3();
-
-      const accounts = await web3.eth.getAccounts();
-
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = Land.networks[networkId];
       const instance = new web3.eth.Contract(
@@ -84,28 +87,30 @@ class Dashboard extends Component {
       this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
 
       const currentAddress = getWalletAddress();
-      console.log(currentAddress);
       var registered = await instance.methods.isBuyer(currentAddress).call();
-      console.log(registered);
       this.setState({ registered: registered });
       var count = await instance.methods.getLandsCount().call();
       count = parseInt(count);
-      console.log(typeof (count));
-      console.log(count);
       var verified = await instance.methods.isVerified(currentAddress).call();
-      console.log(verified);
+      this.setState({ verified: verified });
 
-      // Count this buyer's own requests
+      // Build buyer's request map: landId → { requestId, status (bool), offerPrice }
       var requestsCount = await instance.methods.getRequestsCount().call();
       requestsCount = parseInt(requestsCount);
       let myRequestCount = 0;
+      const myRequests = {}; // keyed by landId
       for (var r = 1; r <= requestsCount; r++) {
         var req = await instance.methods.getRequestDetails(r).call();
-        if (req[1].toLowerCase() === currentAddress.toLowerCase()) myRequestCount++;
+        // req: [sellerId, buyerId, landId, requestStatus (bool), offerPrice]
+        if (req[1].toLowerCase() === currentAddress.toLowerCase()) {
+          myRequestCount++;
+          const landId = parseInt(req[2]);
+          myRequests[landId] = { requestId: r, accepted: req[3], offerPrice: parseInt(req[4]) };
+        }
       }
 
-      // Build the available lands table (all lands, for buyer to browse & request)
-      const row = [];
+      // Build the available lands data
+      const lands = [];
       for (var i = 1; i <= count; i++) {
         var landOwner = await instance.methods.getLandOwner(i).call();
         var area = await instance.methods.getArea(i).call();
@@ -114,21 +119,16 @@ class Dashboard extends Component {
         var price = await instance.methods.getPrice(i).call();
         var pid = await instance.methods.getPID(i).call();
         var survey = await instance.methods.getSurveyNumber(i).call();
+        var landVerified = await instance.methods.isLandVerified(i).call();
+        if (!landVerified) continue;
         var requested = await instance.methods.isRequested(i).call();
-
-        const priceINR = '₹' + parseInt(price).toLocaleString('en-IN');
-        row.push(<tr key={i}><td>{i}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{priceINR}</td><td>{pid}</td><td>{survey}</td>
-          <td>
-            <Button onClick={this.requestLand(landOwner, i)} disabled={!verified || requested} className="button-vote">
-              Request Land
-            </Button>
-          </td>
-        </tr>)
+        const isOwnLand = landOwner.toLowerCase() === currentAddress.toLowerCase();
+        const myReq = myRequests[i] || null;
+        lands.push({ id: i, owner: landOwner, area, city, state, price: parseInt(price), pid, survey, requested, isOwnLand, myRequest: myReq });
       }
-      this.setState({ row, totalLands: count, myRequestCount });
+      this.setState({ lands, totalLands: count, myRequestCount });
 
     } catch (error) {
-      // Catch any errors for any of the above operations.
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
       );
@@ -261,6 +261,39 @@ class Dashboard extends Component {
               </Card>
             </Col>
           </Row>
+          {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted).length > 0 && (
+            <Row>
+              <Col lg="12">
+                <Card style={{ border: '1px solid #d1fae5' }}>
+                  <CardHeader>
+                    <CardTitle tag="h5" style={{ color: '#166534', marginBottom: 0 }}>
+                      <i className="fa fa-check-circle" style={{ marginRight: 8 }} />
+                      Accepted Offers
+                    </CardTitle>
+                  </CardHeader>
+                  <CardBody style={{ paddingTop: 0 }}>
+                    {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted).map(land => (
+                      <div key={land.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, marginBottom: 8,
+                      }}>
+                        <div>
+                          <strong style={{ color: '#333' }}>{land.area} sq ft in {land.city}, {land.state}</strong>
+                          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                            PID: {land.pid} &middot; Your offer: ₹{land.myRequest.offerPrice.toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                        <Button href="/buyer/payment" color="success" size="sm" className="btn-fill">
+                          Make Payment
+                        </Button>
+                      </div>
+                    ))}
+                  </CardBody>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
           <Row>
                 <Col lg="12" md="12">
                   <Card>
@@ -275,14 +308,45 @@ class Dashboard extends Component {
                             <th>Area (sq ft)</th>
                             <th>City</th>
                             <th>State</th>
-                            <th>Price (₹)</th>
+                            <th>Listed Price (₹)</th>
                             <th>Property PID</th>
                             <th>Survey No.</th>
                             <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {this.state.row.length > 0 ? this.state.row : (
+                          {this.state.lands.length > 0 ? this.state.lands.map(land => {
+                            const priceINR = '₹' + land.price.toLocaleString('en-IN');
+                            return (
+                              <tr key={land.id}>
+                                <td>{land.id}</td>
+                                <td>{land.area}</td>
+                                <td>{land.city}</td>
+                                <td>{land.state}</td>
+                                <td>{priceINR}</td>
+                                <td>{land.pid}</td>
+                                <td>{land.survey}</td>
+                                <td>
+                                  {land.isOwnLand ? (
+                                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Owned</span>
+                                  ) : land.myRequest && land.myRequest.accepted ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>Accepted</span>
+                                      <Button href="/buyer/payment" color="success" size="sm" style={{ fontSize: 11, padding: '2px 10px' }}>
+                                        Pay Now
+                                      </Button>
+                                    </div>
+                                  ) : land.requested ? (
+                                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3cd', color: '#856404' }}>Offer Sent</span>
+                                  ) : (
+                                    <Button onClick={() => this.openOfferModal(land)} disabled={!this.state.verified} className="button-vote" style={{ fontSize: 12, padding: '5px 14px' }}>
+                                      Make Offer
+                                    </Button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          }) : (
                             <tr><td colSpan="8" style={{textAlign: "center", color: "#888"}}>No lands listed yet.</td></tr>
                           )}
                         </tbody>
@@ -292,6 +356,45 @@ class Dashboard extends Component {
                 </Col>
               </Row>
         </div>
+
+        {/* Make Offer Modal */}
+        {this.state.showOfferModal && this.state.selectedLand && ReactDOM.createPortal(
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.35)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={this.closeOfferModal}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 420, maxWidth: '90vw', boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+              onClick={e => e.stopPropagation()}>
+              <h4 style={{ color: '#1d1d2b', marginBottom: 4, fontWeight: 600 }}>Make an Offer</h4>
+              <p style={{ color: '#666', fontSize: 13, marginBottom: 16 }}>
+                {this.state.selectedLand.area} sq ft in {this.state.selectedLand.city}, {this.state.selectedLand.state}
+              </p>
+              <div style={{ background: '#f0f4ff', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
+                <span style={{ color: '#666' }}>Listed Price: </span>
+                <span style={{ color: '#344767', fontWeight: 700 }}>₹{this.state.selectedLand.price.toLocaleString('en-IN')}</span>
+              </div>
+              <label style={{ color: '#555', fontSize: 12, fontWeight: 600, marginBottom: 4, display: 'block' }}>Your Offer Price (₹)</label>
+              <input
+                type="number"
+                value={this.state.offerPrice}
+                onChange={e => this.setState({ offerPrice: e.target.value, offerError: '' })}
+                placeholder="Enter your offer amount"
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #ddd',
+                  background: '#f8f9fa', color: '#333', fontSize: 14, marginBottom: 6, outline: 'none',
+                }}
+              />
+              {this.state.offerError && (
+                <p style={{ color: '#dc3545', fontSize: 12, marginBottom: 8 }}>{this.state.offerError}</p>
+              )}
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Button color="secondary" outline onClick={this.closeOfferModal} style={{ flex: 1 }}>Cancel</Button>
+                <Button color="primary" className="btn-fill" onClick={this.submitOffer} disabled={this.state.requesting} style={{ flex: 1 }}>
+                  {this.state.requesting ? 'Submitting...' : 'Submit Offer'}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </>
 
     );

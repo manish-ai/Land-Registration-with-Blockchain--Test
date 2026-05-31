@@ -3,10 +3,7 @@ import LandContract from "./artifacts/Land.json";
 import getWeb3 from "./getWeb3";
 import fileUpload from './ipfs';
 import * as govApi from './services/govApi';
-
-import { FormGroup, FormControl, Button, Spinner, FormFile } from 'react-bootstrap'
-
-//import Navigation from './Navigation'
+import { getWalletAddress } from './services/authService';
 
 class RegisterBuyer extends Component {
     constructor(props) {
@@ -28,54 +25,54 @@ class RegisterBuyer extends Component {
             govData: null,
             aadharResult: null,
             panResult: null,
-            buffer2: null,
+            file2: null,
             documentHash: '',
+            loading: false,
         }
         this.captureDoc = this.captureDoc.bind(this);
-        this.addDoc = this.addDoc.bind(this);
     }
 
     componentDidMount = async () => {
         try {
-            //Get network provider and web3 instance
             const web3 = await getWeb3();
-
-            const accounts = await web3.eth.getAccounts();
-
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = LandContract.networks[networkId];
             const instance = new web3.eth.Contract(
                 LandContract.abi,
                 deployedNetwork && deployedNetwork.address,
             );
-
-            // Use accounts[1] for buyer — accounts[0] is already used for seller registration
-            this.setState({ LandInstance: instance, web3: web3, account: accounts[2] });
-
-
+            this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
         } catch (error) {
-            // Catch any errors for any of the above operations.
-            alert(
-                `Failed to load web3, accounts, or contract. Check console for details.`,
-            );
             console.error(error);
         }
     };
+
     verifyAadhar = async () => {
-        if (!this.state.aadharNumber || !this.state.name) {
-            alert("Please enter both Name and Aadhar Number first.");
+        if (!this.state.aadharNumber.trim() || !this.state.name.trim()) {
+            this.setState({ aadharResult: { reason: 'Enter Name and Aadhaar first' } });
             return;
         }
-        const result = await govApi.verifyAadhar(this.state.aadharNumber, this.state.name);
+        if (!/^\d{12}$/.test(this.state.aadharNumber.trim())) {
+            this.setState({ aadharResult: { reason: 'Aadhaar must be exactly 12 digits' } });
+            return;
+        }
+        const result = await govApi.verifyAadhar(this.state.aadharNumber.trim(), this.state.name.trim());
         this.setState({ aadharResult: result, aadharVerified: result.verified || false });
         if (result.verified && result.verificationId) {
             this.setState({ verificationId: result.verificationId, govData: result });
+            if (result.walletAddress) {
+                this.setState({ account: result.walletAddress });
+            }
         }
     }
 
     verifyPAN = async () => {
-        if (!this.state.panNumber || !this.state.name) {
-            alert("Please enter both Name and PAN Number first.");
+        if (!this.state.panNumber.trim() || !this.state.name.trim()) {
+            this.setState({ panResult: { reason: 'Enter Name and PAN first' } });
+            return;
+        }
+        if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(this.state.panNumber.trim().toUpperCase())) {
+            this.setState({ panResult: { reason: 'PAN must be in format ABCDE1234F' } });
             return;
         }
         const result = await govApi.verifyPAN(this.state.panNumber, this.state.name);
@@ -83,247 +80,194 @@ class RegisterBuyer extends Component {
     }
 
     addDoc = async () => {
-        if (!this.state.buffer2) {
-          console.log('No document selected, skipping upload');
-          this.setState({ documentHash: '' });
-          return;
-        }
+        if (!this.state.file2) return;
         try {
-          const result = await fileUpload.upload(this.state.buffer2);
-          this.setState({ documentHash: result.fileId || '' });
-          console.log('documentHash:', result.fileId);
+            const result = await fileUpload.upload(this.state.file2);
+            this.setState({ documentHash: result.fileId || '' });
         } catch (e) {
-          console.error('File upload failed:', e.message);
-          this.setState({ documentHash: '' });
-        }
-      }
-
-    RegisterBuyer = async () => {
-        await this.addDoc();
-        var pattern = new RegExp(/^(("[\w-\s]+")|([\w-]+(?:\.[\w-]+)*)|("[\w-\s]+")([\w-]+(?:\.[\w-]+)*))(@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][0-9]\.|1[0-9]{2}\.|[0-9]{1,2}\.))((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\]?$)/i);
-
-        if (this.state.name == '' || this.state.age == '' || this.state.city == '' || this.state.email == '') {
-            alert("All the fields are compulsory!");
-        } else if (!this.state.aadharVerified || !this.state.panVerified) {
-            alert("Please complete Aadhar and PAN verification first!");
-        } else if (!Number(this.state.age) || this.state.age < 18) {
-            alert("Your age must be a number and at least 18");
-        } else if(this.state.email == '' || !pattern.test(this.state.email)){
-            alert('Please enter a valid email address\n');
-        }
-        else{
-            await this.state.LandInstance.methods.registerBuyer(
-                this.state.name,
-                this.state.age,
-                this.state.city,
-                this.state.email,
-                this.state.verificationId,
-                this.state.documentHash,
-                )
-
-                .send({
-                    from : this.state.account,
-                    gas : 2100000
-                }).then(response => {
-                    window.location.href = "/buyer/dashboard";
-                });
+            console.error('File upload failed:', e.message);
+            this.setState({ documentHash: '' });
         }
     }
 
-    updateName = event => (
-        this.setState({ name: event.target.value })
-    )
-    updateAge = event => (
-        this.setState({ age: event.target.value })
-    )
-    updateCity = event => (
-        this.setState({ city: event.target.value })
-    )
-    updateEmail = event => (
-        this.setState({ email: event.target.value })
-    )
-    updateAadhar = event => (
-        this.setState({ aadharNumber: event.target.value })
-    )
-    updatePan = event => (
-        this.setState({ panNumber: event.target.value })
-    )
+    RegisterBuyer = async () => {
+        this.setState({ loading: true });
+        await this.addDoc();
+        var pattern = new RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+
+        if (this.state.name === '' || this.state.age === '' || this.state.city === '' || this.state.email === '') {
+            this.setState({ loading: false, aadharResult: { reason: 'All fields are compulsory!' } });
+        } else if (!this.state.aadharVerified || !this.state.panVerified) {
+            this.setState({ loading: false, aadharResult: { reason: 'Complete Aadhaar and PAN verification first!' } });
+        } else if (!Number(this.state.age) || this.state.age < 18) {
+            this.setState({ loading: false, aadharResult: { reason: 'Age must be a number and at least 18' } });
+        } else if (!pattern.test(this.state.email)) {
+            this.setState({ loading: false, panResult: { reason: 'Enter a valid email address' } });
+        } else {
+            try {
+                const alreadyRegistered = await this.state.LandInstance.methods.isRegistered(this.state.account).call();
+                if (alreadyRegistered) {
+                    this.setState({ loading: false, aadharResult: { reason: 'This account is already registered. Please sign in instead.' } });
+                    return;
+                }
+                await this.state.LandInstance.methods.registerBuyer(
+                    this.state.name,
+                    this.state.age,
+                    this.state.city,
+                    this.state.email,
+                    this.state.verificationId,
+                    this.state.documentHash,
+                ).send({
+                    from: this.state.account,
+                    gas: 2100000
+                });
+                window.location.href = "/";
+            } catch (e) {
+                console.error(e);
+                this.setState({ loading: false, aadharResult: { reason: 'Registration failed: ' + (e.message || 'Check console') } });
+            }
+        }
+    }
+
     captureDoc(event) {
         event.preventDefault()
         const file2 = event.target.files[0]
-        const reader2 = new window.FileReader()
-        reader2.readAsArrayBuffer(file2)
-        reader2.onloadend = () => {
-          this.setState({ buffer2: Buffer(reader2.result) })
-          console.log('buffer2', this.state.buffer2)
-        }
-        console.log('caoture doc...')
-      }
-
+        if (file2) this.setState({ file2 })
+    }
 
     render() {
-        if (!this.state.web3) {
-            return (
-                <div className="bodyC">
+        const { aadharVerified, panVerified, aadharResult, panResult, loading } = this.state;
 
-                    <div className="img-wrapper">
-                        <img src="https://i.pinimg.com/originals/71/6e/00/716e00537e8526347390d64ec900107d.png" className="logo" />
-                        <div className="wine-text-container">
-                            <div className="site-title wood-text">Land Registry</div>
-                        </div>
-                    </div>
-                    <div className="auth-wrapper">
-                        <div className="auth-inner">
-                            <div>
-                                <div>
-                                    <h1>
-                                        <Spinner animation="border" variant="warning" />
-                                    </h1>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
+        const inputStyle = {
+            width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #e0e0e0',
+            fontSize: 14, outline: 'none', marginBottom: 4, boxSizing: 'border-box',
+        };
+        const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 };
+        const btnSmall = (onClick, label, color) => (
+            <button onClick={onClick} style={{
+                padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: color || '#1a5276', color: '#fff', border: 'none', cursor: 'pointer', marginTop: 4,
+            }}>{label}</button>
+        );
+        const badge = (ok, msg) => (
+            <span style={{ fontSize: 11, fontWeight: 700, marginLeft: 8, color: ok ? '#166534' : '#991b1b' }}>
+                {ok ? '✓ Verified' : msg || ''}
+            </span>
+        );
 
         return (
-            <div className="bodyC">
-                <div className="img-wrapper">
-                    <img src="https://i.pinimg.com/originals/71/6e/00/716e00537e8526347390d64ec900107d.png" className="logo" />
-                    <div className="wine-text-container">
-                        <div className="site-title wood-text">Land Registry</div>
+            <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+                {/* Left panel */}
+                <div style={{
+                    flex: '0 0 42%', background: 'linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 40px',
+                    position: 'relative', overflow: 'hidden',
+                }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(to right, #FF9933 33%, #fff 33%, #fff 66%, #138808 66%)' }} />
+                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380 }}>
+                        <div style={{
+                            width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.12)',
+                            border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', margin: '0 auto 24px', fontSize: 32,
+                        }}>🏛️</div>
+                        <div style={{ color: '#FF9933', fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>
+                            Government of India
+                        </div>
+                        <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, lineHeight: 1.2, margin: '0 0 12px' }}>
+                            Buyer Registration
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.7, margin: '0 0 30px' }}>
+                            Register as a property buyer on the Digital Land Registry platform.
+                        </p>
+                        {[
+                            { icon: '🔒', text: 'Aadhaar & PAN verified identity' },
+                            { icon: '🏠', text: 'Browse and purchase verified properties' },
+                            { icon: '⛓️', text: 'Blockchain-backed ownership records' },
+                        ].map((f, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, textAlign: 'left' }}>
+                                <span style={{ fontSize: 18 }}>{f.icon}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>{f.text}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                <div className="auth-wrapper">
-                    <div className="auth-inner">
-                        <div className="App">
 
-                            <div>
-                                <div>
-                                    <h1 style={{color:"black"}}>
-                                        Buyer Registration
-                  </h1>
-                                </div>
+                {/* Right panel — form */}
+                <div style={{
+                    flex: 1, background: '#f7f8fc', display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', alignItems: 'center', padding: '32px 24px',
+                    overflowY: 'auto',
+                }}>
+                    <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 16, padding: '32px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                        <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>Create Buyer Account</h2>
+                        <p style={{ margin: '0 0 24px', color: '#999', fontSize: 13 }}>Fill in your details and verify your identity</p>
+
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={labelStyle}>Full Name</label>
+                            <input style={inputStyle} placeholder="Enter full name" value={this.state.name} onChange={e => this.setState({ name: e.target.value })} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={labelStyle}>Age</label>
+                                <input style={inputStyle} placeholder="Age" type="number" min="18" value={this.state.age} onChange={e => this.setState({ age: e.target.value })} />
                             </div>
-
-
-
-                            <div className="form">
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter Name --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.name}
-                                            onChange={this.updateName}
-                                        />
-                                    </div>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter Age --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.age}
-                                            onChange={this.updateAge}
-                                        />
-                                    </div>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter City --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.city}
-                                            onChange={this.updateCity}
-                                        />
-                                    </div>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter Email Address --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.email}
-                                            onChange={this.updateEmail}
-                                        />
-                                    </div>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter Aadhar No --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.aadharNumber}
-                                            onChange={this.updateAadhar}
-                                        />
-                                    </div>
-                                    <Button onClick={this.verifyAadhar} className="button-vote" style={{marginTop: '5px'}}>
-                                        Verify with UIDAI
-                                    </Button>
-                                    {this.state.aadharResult && (
-                                        <span style={{marginLeft: '10px', color: this.state.aadharVerified ? 'green' : 'red', fontWeight: 'bold'}}>
-                                            {this.state.aadharVerified ? 'Verified' : ('Failed: ' + (this.state.aadharResult.reason || 'Not verified'))}
-                                        </span>
-                                    )}
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <div className="form-label">
-                                        Enter PAN No --
-                      </div>
-                                    <div className="form-input">
-                                        <FormControl
-                                            input='text'
-                                            value={this.state.panNumber}
-                                            onChange={this.updatePan}
-                                        />
-                                    </div>
-                                    <Button onClick={this.verifyPAN} className="button-vote" style={{marginTop: '5px'}}>
-                                        Verify with Income Tax
-                                    </Button>
-                                    {this.state.panResult && (
-                                        <span style={{marginLeft: '10px', color: this.state.panVerified ? 'green' : 'red', fontWeight: 'bold'}}>
-                                            {this.state.panVerified ? 'Verified' : ('Failed: ' + (this.state.panResult.reason || 'Not verified'))}
-                                        </span>
-                                    )}
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <label>Upload Identity Document (PDF Format)</label>
-                                    <FormFile
-                                        id="File2"
-                                        onChange={this.captureDoc}
-                                    />
-                                </FormGroup>
-
-                                <Button onClick={this.RegisterBuyer} disabled={!this.state.aadharVerified || !this.state.panVerified} className="button-vote">
-                                    Register on Blockchain
-                  </Button>
+                            <div style={{ flex: 1 }}>
+                                <label style={labelStyle}>City</label>
+                                <input style={inputStyle} placeholder="City" value={this.state.city} onChange={e => this.setState({ city: e.target.value })} />
                             </div>
+                        </div>
 
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={labelStyle}>Email Address</label>
+                            <input style={inputStyle} placeholder="email@example.com" type="email" value={this.state.email} onChange={e => this.setState({ email: e.target.value })} />
+                        </div>
+
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={labelStyle}>Aadhaar Number {aadharResult && badge(aadharVerified, aadharResult.reason)}</label>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <input style={{ ...inputStyle, flex: 1 }} placeholder="12-digit Aadhaar" value={this.state.aadharNumber} onChange={e => this.setState({ aadharNumber: e.target.value })} />
+                                {btnSmall(this.verifyAadhar, 'Verify', aadharVerified ? '#166534' : '#1a5276')}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: 16 }}>
+                            <label style={labelStyle}>PAN Number {panResult && badge(panVerified, panResult.reason)}</label>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <input style={{ ...inputStyle, flex: 1 }} placeholder="ABCDE1234F" value={this.state.panNumber} onChange={e => this.setState({ panNumber: e.target.value })} />
+                                {btnSmall(this.verifyPAN, 'Verify', panVerified ? '#166534' : '#1a5276')}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: 20 }}>
+                            <label style={labelStyle}>Identity Document (PDF)</label>
+                            <input type="file" accept=".pdf,.jpg,.png" onChange={this.captureDoc} style={{ fontSize: 13 }} />
+                        </div>
+
+                        <button
+                            onClick={this.RegisterBuyer}
+                            disabled={!aadharVerified || !panVerified || loading}
+                            style={{
+                                width: '100%', padding: '12px', borderRadius: 8, fontSize: 14, fontWeight: 700,
+                                background: (!aadharVerified || !panVerified || loading) ? '#aaa' : '#1a5276',
+                                color: '#fff', border: 'none', cursor: (!aadharVerified || !panVerified || loading) ? 'not-allowed' : 'pointer',
+                                marginBottom: 16,
+                            }}
+                        >
+                            {loading ? 'Registering...' : 'Register on Blockchain →'}
+                        </button>
+
+                        <div style={{ textAlign: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+                            <span style={{ color: '#999', fontSize: 12 }}>Already registered? </span>
+                            <a href="/" style={{ color: '#1a5276', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Sign In</a>
+                            <span style={{ color: '#ccc', margin: '0 8px' }}>|</span>
+                            <a href="/RegisterSeller" style={{ color: '#1a5276', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Register as Seller</a>
                         </div>
                     </div>
+                    <div style={{ marginTop: 20, color: '#bbb', fontSize: 11 }}>Digital Land Registry System · Built on Ethereum Blockchain</div>
                 </div>
             </div>
         );
-
     }
 }
 

@@ -97,8 +97,9 @@ export const processPayment = async (buyerAadhar, sellerAadhar, amount, landPID)
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ buyerAadhar, sellerAadhar, amount, landPID })
         });
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        return await res.json();
+        // Always parse the JSON body — error responses contain useful details (balance info, etc.)
+        const data = await res.json();
+        return data;
     } catch (err) {
         return {
             success: false,
@@ -171,8 +172,8 @@ export const getAadharByVerificationId = async (verificationId) => {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        return await res.json();
+        const data = await res.json();
+        return data;
     } catch (err) {
         return {
             found: false,

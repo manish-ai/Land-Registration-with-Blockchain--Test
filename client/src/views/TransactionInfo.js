@@ -2,43 +2,19 @@ import React, { Component } from 'react';
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress } from '../services/authService';
-import { Line, Bar } from "react-chartjs-2";
 import '../index.css';
 import '../../node_modules/bootstrap/dist/css/bootstrap.min.css';
-import { DrizzleProvider } from '../drizzle-shims/drizzle-react';
-import { Spinner } from 'react-bootstrap'
-import {
-    LoadingContainer,
-    AccountData,
-    ContractData,
-    ContractForm
-} from '../drizzle-shims/drizzle-react-components'
-
-// reactstrap components
+import { Spinner } from 'react-bootstrap';
 import {
     Button,
-    ButtonGroup,
     Card,
     CardHeader,
     CardBody,
     CardTitle,
-    DropdownToggle,
-    DropdownMenu,
-    DropdownItem,
-    UncontrolledDropdown,
-    Label,
-    FormGroup,
-    Input,
     Table,
     Row,
     Col,
-    UncontrolledTooltip,
 } from "reactstrap";
-
-
-const drizzleOptions = {
-    contracts: [Land]
-}
 
 
 class TransactionInfo extends Component {
@@ -55,27 +31,19 @@ class TransactionInfo extends Component {
     }
 
     landTransfer = (landId, newOwner) => async () => {
-        
         await this.state.LandInstance.methods.LandOwnershipTransfer(
             landId, newOwner
         ).send({
-            from : this.state.account,
-            gas : 2100000
+            from: this.state.account,
+            gas: 2100000
         });
         window.location.reload(false);
-
     }
-
 
     componentDidMount = async () => {
         try {
-            //Get network provider and web3 instance
             const web3 = await getWeb3();
-
-            const accounts = await web3.eth.getAccounts();
-
             const currentAddress = getWalletAddress();
-            //console.log(currentAddress);
             const networkId = await web3.eth.net.getId();
             const deployedNetwork = Land.networks[networkId];
             const instance = new web3.eth.Contract(
@@ -84,69 +52,72 @@ class TransactionInfo extends Component {
             );
 
             this.setState({ LandInstance: instance, web3: web3, account: getWalletAddress() });
-            
+
             var verified = await instance.methods.isLandInspector(currentAddress).call();
-            //console.log(verified);
             this.setState({ verified: verified });
-            
-            var count = await instance.methods.getLandsCount().call();
-            count = parseInt(count);
-            var rowsArea = [];
-            var rowsCity = [];
-            var rowsState = [];
-            var rowsPrice = [];
-            var rowsPID = [];
-            var rowsSurvey = [];
 
+            var count = parseInt(await instance.methods.getLandsCount().call());
 
-            for (var i = 1; i < count + 1; i++) {
-                rowsArea.push(<ContractData contract="Land" method="getArea" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-                rowsCity.push(<ContractData contract="Land" method="getCity" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-                rowsState.push(<ContractData contract="Land" method="getState" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-                rowsPrice.push(<ContractData contract="Land" method="getPrice" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-                rowsPID.push(<ContractData contract="Land" method="getPID" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-                rowsSurvey.push(<ContractData contract="Land" method="getSurveyNumber" methodArgs={[i, { from: "0xa42A8B478E5e010609725C2d5A8fe6c0C4A939cB" }]} />);
-              }
-            var requestsCount = await instance.methods.getRequestsCount().call();
-            requestsCount = parseInt(requestsCount);
-
-            // Build a map from landId → request info (Bug 5 fix: requests are separate from lands)
+            // Build request map keyed by landId
+            var requestsCount = parseInt(await instance.methods.getRequestsCount().call());
             const requestByLandId = {};
             for (var r = 1; r <= requestsCount; r++) {
                 var req = await instance.methods.getRequestDetails(r).call();
                 var reqPaid = await instance.methods.isPaid(r).call();
-                // req[2] is landId
                 requestByLandId[req[2]] = { req, reqId: r, isPaid: reqPaid };
             }
 
             const landTable = [];
             for (var i = 1; i <= count; i++) {
+                const area = await instance.methods.getArea(i).call();
+                const city = await instance.methods.getCity(i).call();
+                const state = await instance.methods.getState(i).call();
+                const price = await instance.methods.getPrice(i).call();
+                const pid = await instance.methods.getPID(i).call();
+                const survey = await instance.methods.getSurveyNumber(i).call();
+                const owner = await instance.methods.getLandOwner(i).call();
+
                 var reqInfo = requestByLandId[String(i)] || null;
                 var request = reqInfo ? reqInfo.req : [null, null, null, false];
                 var isPaid = reqInfo ? reqInfo.isPaid : false;
-                var disabled = request[3] && isPaid;
+                var alreadyTransferred = reqInfo && request[1] && owner.toLowerCase() === request[1].toLowerCase();
+                var canTransfer = request[3] && isPaid && !alreadyTransferred;
 
-                var owner = await instance.methods.getLandOwner(i).call();
-                landTable.push(<tr key={i}><td>{i}</td><td>{owner}</td><td>{rowsArea[i-1]}</td><td>{rowsCity[i-1]}</td><td>{rowsState[i-1]}</td><td>{rowsPrice[i-1]}</td><td>{rowsPID[i-1]}</td><td>{rowsSurvey[i-1]}</td>
-                <td>
-                     <Button onClick={this.landTransfer(i, request[1])} disabled={!disabled} className="button-vote">
-                          Verify Transaction
-                    </Button>
-                </td>
-                </tr>)
+                const ownerShort = `${owner.slice(0, 8)}...${owner.slice(-6)}`;
+
+                landTable.push(<tr key={i}>
+                    <td>{i}</td>
+                    <td><span title={owner} style={{ fontFamily: 'monospace', fontSize: 12 }}>{ownerShort}</span></td>
+                    <td>{area} sq m</td>
+                    <td>{city}</td>
+                    <td>{state}</td>
+                    <td>₹{parseInt(price).toLocaleString('en-IN')}</td>
+                    <td>{pid}</td>
+                    <td>{survey}</td>
+                    <td>
+                        {alreadyTransferred ? (
+                            <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Transferred</span>
+                        ) : canTransfer ? (
+                            <Button onClick={this.landTransfer(i, request[1])} size="sm" color="success">
+                                Transfer Ownership
+                            </Button>
+                        ) : (
+                            <span style={{ color: '#888', fontSize: 12 }}>
+                                {reqInfo ? (request[3] ? 'Awaiting Payment' : 'Request Pending') : 'No Request'}
+                            </span>
+                        )}
+                    </td>
+                </tr>);
             }
             this.setState({ landTable });
 
         } catch (error) {
-            // Catch any errors for any of the above operations.
             alert(
                 `Failed to load web3, accounts, or contract. Check console for details.`,
             );
             console.error(error);
         }
     };
-
-
 
     render() {
         if (!this.state.web3) {
@@ -157,7 +128,6 @@ class TransactionInfo extends Component {
                             <Spinner animation="border" variant="primary" />
                         </h1>
                     </div>
-
                 </div>
             );
         }
@@ -178,52 +148,45 @@ class TransactionInfo extends Component {
                             </Col>
                         </Row>
                     </div>
-
                 </div>
             );
         }
 
         return (
-            <DrizzleProvider options={drizzleOptions}>
-                <LoadingContainer>
-                    <div className="content">
-                        <Row>
-                            <Col xs="12">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle tag="h6">Lands Info</CardTitle>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <Table className="tablesorter" responsive color="black">
-                                            <thead className="text-primary">
-                                                <tr>
-                                                <th>#</th>
-                                                <th>Owner ID</th>
-                                                <th>Area</th>
-                                                <th>City</th>
-                                                <th>State</th>
-                                                <th>Price (₹)</th>
-                                                <th>Property PID</th>
-                                                <th>Survey Number</th>
-                                                <th>Verify Land Transfer</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {this.state.landTable.length > 0 ? this.state.landTable : (
-                                                    <tr><td colSpan="9" style={{textAlign: "center", color: "#888"}}>No land transactions found.</td></tr>
-                                                )}
-                                            </tbody>
-                                        </Table>
-                                    </CardBody>
-                                </Card>
-                            </Col>
-                        </Row>
-
-                    </div>
-                </LoadingContainer>
-            </DrizzleProvider>
+            <div className="content">
+                <Row>
+                    <Col xs="12">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h4">Land Transactions</CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <Table className="tablesorter" responsive color="black">
+                                    <thead className="text-primary">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Owner</th>
+                                            <th>Area</th>
+                                            <th>City</th>
+                                            <th>State</th>
+                                            <th>Price</th>
+                                            <th>Property PID</th>
+                                            <th>Survey Number</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {this.state.landTable.length > 0 ? this.state.landTable : (
+                                            <tr><td colSpan="9" style={{textAlign: "center", color: "#888"}}>No land transactions found.</td></tr>
+                                        )}
+                                    </tbody>
+                                </Table>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
         );
-
     }
 }
 

@@ -57,6 +57,10 @@ export default class Login extends Component {
         const result = await verifyOtp(identifier.trim(), idType, otp.trim());
         this.setState({ loading: false });
         if (result.success) {
+            if (!result.role) {
+                this.setState({ error: 'No blockchain registration found. Please register as a Buyer or Seller first.' });
+                return;
+            }
             this.redirectByRole(result.role);
         } else {
             this.setState({ error: result.error || 'Invalid OTP. Please try again.' });

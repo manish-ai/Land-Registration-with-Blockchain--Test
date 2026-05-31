@@ -422,7 +422,7 @@
                                 <th>Survey No.</th>
                                 <th>Area (sqm)</th>
                                 <th>City</th>
-                                <th>Owner</th>
+                                <th>State</th>
                                 <th>Market Value</th>
                                 <th>Type</th>
                                 <th>Flags</th>
@@ -431,6 +431,7 @@
                         </thead>
                         <tbody id="landBody">
                             <tr><td colspan="10" class="loading-spinner"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</td></tr>
+
                         </tbody>
                     </table>
                 </div>
@@ -657,18 +658,6 @@
                             <input type="text" class="form-control" id="landState" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">District</label>
-                            <input type="text" class="form-control" id="landDistrict">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Taluk</label>
-                            <input type="text" class="form-control" id="landTaluk">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Village</label>
-                            <input type="text" class="form-control" id="landVillage">
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label">Land Type</label>
                             <select class="form-select" id="landType">
                                 <option value="">Select</option>
@@ -678,28 +667,12 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Owner Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="landOwnerName" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Owner Aadhar <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="landOwnerAadhar" required maxlength="12">
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label">Market Value (INR) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="landValue" required min="0">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label">Registration Date</label>
                             <input type="date" class="form-control" id="landRegDate">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Latitude</label>
-                            <input type="number" class="form-control" id="landLat" step="any">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Longitude</label>
-                            <input type="number" class="form-control" id="landLng" step="any">
                         </div>
                         <div class="col-md-12 d-flex gap-4">
                             <div class="form-check">
@@ -1084,7 +1057,7 @@ function renderLand(records) {
             '<td><code>' + escapeHtml(r.survey_number) + '</code></td>' +
             '<td>' + (r.area ? r.area.toLocaleString('en-IN') : '-') + '</td>' +
             '<td>' + escapeHtml(r.city || '-') + '</td>' +
-            '<td>' + escapeHtml(r.owner_name) + '</td>' +
+            '<td>' + escapeHtml(r.state || '-') + '</td>' +
             '<td class="amount">' + formatINR(r.market_value) + '</td>' +
             '<td>' + escapeHtml(r.land_type || '-') + '</td>' +
             '<td>' + flags + '</td>' +
@@ -1106,8 +1079,7 @@ function filterLand() {
         return (r.property_pid && r.property_pid.toLowerCase().includes(q)) ||
             (r.survey_number && r.survey_number.toLowerCase().includes(q)) ||
             (r.city && r.city.toLowerCase().includes(q)) ||
-            (r.owner_name && r.owner_name.toLowerCase().includes(q)) ||
-            (r.owner_aadhar && r.owner_aadhar.toLowerCase().includes(q));
+            (r.state && r.state.toLowerCase().includes(q));
     });
     renderLand(filtered);
 }
@@ -1120,16 +1092,9 @@ function openLandModal(data) {
     document.getElementById('landArea').value = data ? data.area : '';
     document.getElementById('landCity').value = data ? data.city : '';
     document.getElementById('landState').value = data ? data.state : '';
-    document.getElementById('landDistrict').value = data ? (data.district || '') : '';
-    document.getElementById('landTaluk').value = data ? (data.taluk || '') : '';
-    document.getElementById('landVillage').value = data ? (data.village || '') : '';
     document.getElementById('landType').value = data ? (data.land_type || '') : '';
-    document.getElementById('landOwnerName').value = data ? data.owner_name : '';
-    document.getElementById('landOwnerAadhar').value = data ? data.owner_aadhar : '';
     document.getElementById('landValue').value = data ? data.market_value : '';
     document.getElementById('landRegDate').value = data ? (data.registration_date || '') : '';
-    document.getElementById('landLat').value = data ? (data.latitude || '') : '';
-    document.getElementById('landLng').value = data ? (data.longitude || '') : '';
     document.getElementById('landEncumbrance').checked = data ? !!data.has_encumbrance : false;
     document.getElementById('landLitigation').checked = data ? !!data.has_litigation : false;
     document.getElementById('landOnChain').checked = data ? !!data.is_registered_on_chain : false;
@@ -1149,23 +1114,16 @@ async function saveLand() {
         area: parseInt(document.getElementById('landArea').value),
         city: document.getElementById('landCity').value.trim(),
         state: document.getElementById('landState').value.trim(),
-        district: document.getElementById('landDistrict').value.trim() || null,
-        taluk: document.getElementById('landTaluk').value.trim() || null,
-        village: document.getElementById('landVillage').value.trim() || null,
         land_type: document.getElementById('landType').value || null,
-        owner_name: document.getElementById('landOwnerName').value.trim(),
-        owner_aadhar: document.getElementById('landOwnerAadhar').value.trim(),
         market_value: parseInt(document.getElementById('landValue').value),
         registration_date: document.getElementById('landRegDate').value || null,
-        latitude: document.getElementById('landLat').value ? parseFloat(document.getElementById('landLat').value) : null,
-        longitude: document.getElementById('landLng').value ? parseFloat(document.getElementById('landLng').value) : null,
         has_encumbrance: document.getElementById('landEncumbrance').checked ? 1 : 0,
         has_litigation: document.getElementById('landLitigation').checked ? 1 : 0,
         is_registered_on_chain: document.getElementById('landOnChain').checked ? 1 : 0
     };
 
-    if (!body.property_pid || !body.survey_number || !body.area || !body.city || !body.state || !body.owner_name || !body.owner_aadhar || !body.market_value) {
-        showToast('PID, Survey No, Area, City, State, Owner Name, Owner Aadhar, and Market Value are required', 'warning');
+    if (!body.property_pid || !body.survey_number || !body.area || !body.city || !body.state || !body.market_value) {
+        showToast('PID, Survey No, Area, City, State, and Market Value are required', 'warning');
         return;
     }
 

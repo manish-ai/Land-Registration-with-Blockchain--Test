@@ -44,6 +44,7 @@ contract Land {
         address sellerId;
         address buyerId;
         uint landId;
+        uint offerPrice;
     }
 
     //key value pairs
@@ -61,6 +62,7 @@ contract Land {
     mapping(address => bool) public BuyerVerification;
     mapping(address => bool) public BuyerRejection;
     mapping(uint => bool) public LandVerification;
+    mapping(uint => bool) public LandRejection;
     mapping(uint => address) public LandOwner;
     mapping(uint => bool) public RequestStatus;
     mapping(uint => bool) public RequestedLands;
@@ -87,6 +89,8 @@ contract Land {
     event OwnershipTransferred(uint indexed landId, address indexed newOwner, uint timestamp);
     event Verified(address _id);
     event Rejected(address _id);
+    event LandVerifiedEvent(uint indexed landId, uint timestamp);
+    event LandRejectedEvent(uint indexed landId, uint timestamp);
 
     constructor() public{
         Land_Inspector = msg.sender ;
@@ -182,10 +186,28 @@ contract Land {
         require(isLandInspector(msg.sender));
 
         LandVerification[_landId] = true;
+        LandRejection[_landId] = false;
+
+        emit LandVerifiedEvent(_landId, block.timestamp);
+    }
+
+    function rejectLand(uint _landId) public{
+        require(isLandInspector(msg.sender));
+
+        LandRejection[_landId] = true;
+        LandVerification[_landId] = false;
+
+        emit LandRejectedEvent(_landId, block.timestamp);
     }
 
     function isLandVerified(uint _id) public view returns (bool) {
         if(LandVerification[_id]){
+            return true;
+        }
+    }
+
+    function isLandRejected(uint _id) public view returns (bool) {
+        if(LandRejection[_id]){
             return true;
         }
     }
@@ -308,19 +330,19 @@ contract Land {
         return (BuyerMapping[i].name, BuyerMapping[i].age, BuyerMapping[i].city, BuyerMapping[i].email, BuyerMapping[i].verificationId, BuyerMapping[i].documentHash);
     }
 
-    function requestLand(address _sellerId, uint _landId) public{
+    function requestLand(address _sellerId, uint _landId, uint _offerPrice) public{
         require(isBuyer(msg.sender) && isVerified(msg.sender));
 
         requestsCount++;
-        RequestsMapping[requestsCount] = LandRequest(requestsCount, _sellerId, msg.sender, _landId);
+        RequestsMapping[requestsCount] = LandRequest(requestsCount, _sellerId, msg.sender, _landId, _offerPrice);
         RequestStatus[requestsCount] = false;
         RequestedLands[requestsCount] = true;
 
         emit LandRequested(requestsCount, msg.sender, _landId, block.timestamp);
     }
 
-    function getRequestDetails (uint i) public view returns (address, address, uint, bool) {
-        return(RequestsMapping[i].sellerId, RequestsMapping[i].buyerId, RequestsMapping[i].landId, RequestStatus[i]);
+    function getRequestDetails (uint i) public view returns (address, address, uint, bool, uint) {
+        return(RequestsMapping[i].sellerId, RequestsMapping[i].buyerId, RequestsMapping[i].landId, RequestStatus[i], RequestsMapping[i].offerPrice);
     }
 
     function isRequested(uint _id) public view returns (bool) {

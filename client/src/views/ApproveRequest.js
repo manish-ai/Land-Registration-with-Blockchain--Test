@@ -93,7 +93,33 @@ class ApproveRequest extends Component {
                 var approved = await instance.methods.isApproved(i).call();
                 console.log(approved);
                 if (currentAddress.toLowerCase() === request[0].toLowerCase()) {
-                    requestTable.push(<tr key={i}><td>{i}</td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3].toString()}</td>
+                    // Resolve buyer name from address
+                    let buyerName = request[1];
+                    try {
+                        const buyerDetails = await instance.methods.getBuyerDetails(request[1]).call();
+                        if (buyerDetails[0]) buyerName = buyerDetails[0];
+                    } catch (e) { /* fallback to address */ }
+                    const offerPrice = request[4] ? parseInt(request[4]) : 0;
+                    const offerINR = offerPrice > 0 ? '₹' + offerPrice.toLocaleString('en-IN') : '—';
+                    // Get land listed price for comparison
+                    let landPrice = 0;
+                    try {
+                        landPrice = parseInt(await instance.methods.getPrice(request[2]).call());
+                    } catch (e) {}
+                    const priceDiff = landPrice > 0 && offerPrice > 0 ? ((offerPrice - landPrice) / landPrice * 100).toFixed(1) : null;
+                    const statusLabel = request[3] ? 'Approved' : 'Pending';
+                    const statusColor = request[3] ? '#166534' : '#856404';
+                    const statusBg = request[3] ? '#d1fae5' : '#fff3cd';
+                    requestTable.push(<tr key={i}><td>{i}</td><td>{buyerName}</td><td>{request[2]}</td>
+                        <td>
+                            <div style={{ fontWeight: 700, fontSize: 14 }}>{offerINR}</div>
+                            {priceDiff !== null && (
+                                <div style={{ fontSize: 11, color: Number(priceDiff) >= 0 ? '#166534' : '#991b1b' }}>
+                                    {Number(priceDiff) >= 0 ? '+' : ''}{priceDiff}% vs listed
+                                </div>
+                            )}
+                        </td>
+                        <td><span style={{ padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: statusBg, color: statusColor }}>{statusLabel}</span></td>
                         <td>
                             <Button onClick={this.approveRequest(i)} disabled={approved} className="button-vote" color="success" size="sm">
                                 {approved ? 'Accepted' : 'Accept Offer'}
@@ -153,15 +179,16 @@ class ApproveRequest extends Component {
                                     <thead className="text-primary">
                                         <tr>
                                             <th>#</th>
-                                            <th>Buyer Address</th>
+                                            <th>Buyer Name</th>
                                             <th>Land ID</th>
-                                            <th>Request Status</th>
+                                            <th>Offer Price</th>
+                                            <th>Status</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {this.state.requestTable.length > 0 ? this.state.requestTable : (
-                                            <tr><td colSpan="5" style={{textAlign: "center", color: "#888"}}>No pending requests.</td></tr>
+                                            <tr><td colSpan="6" style={{textAlign: "center", color: "#888"}}>No pending requests.</td></tr>
                                         )}
                                     </tbody>
                                 </Table>

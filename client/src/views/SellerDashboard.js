@@ -81,8 +81,15 @@ class SDash extends Component {
         var price = await instance.methods.getPrice(i).call();
         var pid = await instance.methods.getPID(i).call();
         var survey = await instance.methods.getSurveyNumber(i).call();
+        var landVerified = await instance.methods.isLandVerified(i).call();
+        var landRejected = await instance.methods.isLandRejected(i).call();
         const priceINR = '₹' + parseInt(price).toLocaleString('en-IN');
-        row.push(<tr key={i}><td>{myLandCount}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{priceINR}</td><td>{pid}</td><td>{survey}</td></tr>);
+        const statusBadge = landVerified
+          ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>Verified</span>
+          : landRejected
+          ? <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fee2e2', color: '#991b1b' }}>Rejected</span>
+          : <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3cd', color: '#856404' }}>Pending</span>;
+        row.push(<tr key={i}><td>{myLandCount}</td><td>{area}</td><td>{city}</td><td>{state}</td><td>{priceINR}</td><td>{pid}</td><td>{survey}</td><td>{statusBadge}</td></tr>);
       }
 
       // Count requests for this seller's lands
@@ -246,11 +253,12 @@ class SDash extends Component {
                             <th>Price (₹)</th>
                             <th>Property PID</th>
                             <th>Survey No.</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {this.state.row.length > 0 ? this.state.row : (
-                            <tr><td colSpan="7" style={{textAlign: "center", color: "#888", padding: 20}}>No lands added yet. Click "Add Land" to list your first property.</td></tr>
+                            <tr><td colSpan="8" style={{textAlign: "center", color: "#888", padding: 20}}>No lands added yet. Click "Add Land" to list your first property.</td></tr>
                           )}
                         </tbody>
                       </Table>

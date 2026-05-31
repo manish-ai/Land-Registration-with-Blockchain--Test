@@ -25,6 +25,7 @@ class LIDashboard extends Component {
             buyersCount: 0,
             requestsCount: 0,
             landsCount: 0,
+            pendingLands: 0,
         };
     }
 
@@ -46,7 +47,14 @@ class LIDashboard extends Component {
             const requestsCount = parseInt(await instance.methods.getRequestsCount().call());
             const landsCount = parseInt(await instance.methods.getLandsCount().call());
 
-            this.setState({ verified, sellersCount, buyersCount, requestsCount, landsCount });
+            let pendingLands = 0;
+            for (let i = 1; i <= landsCount; i++) {
+                const isVerified = await instance.methods.isLandVerified(i).call();
+                const isRejected = await instance.methods.isLandRejected(i).call();
+                if (!isVerified && !isRejected) pendingLands++;
+            }
+
+            this.setState({ verified, sellersCount, buyersCount, requestsCount, landsCount, pendingLands });
         } catch (error) {
             alert('Failed to load contract data. Check console for details.');
             console.error(error);
@@ -74,7 +82,7 @@ class LIDashboard extends Component {
             );
         }
 
-        const { sellersCount, buyersCount, requestsCount, landsCount } = this.state;
+        const { sellersCount, buyersCount, requestsCount, landsCount, pendingLands } = this.state;
 
         return (
             <div className="content">
@@ -109,6 +117,23 @@ class LIDashboard extends Component {
                         </div>
                     </Col>
                 </Row>
+                {pendingLands > 0 && (
+                    <Row>
+                        <Col lg="12">
+                            <div style={{
+                                background: 'rgba(255, 179, 0, 0.1)',
+                                border: '1px solid rgba(255, 179, 0, 0.4)',
+                                borderRadius: 8,
+                                padding: '12px 18px',
+                                marginBottom: 16,
+                                color: '#ffb300',
+                                fontSize: 13,
+                            }}>
+                                <strong>{pendingLands} land(s)</strong> pending verification. <a href="/admin/land-verifications" style={{ color: '#ffb300', fontWeight: 700, textDecoration: 'underline' }}>Review now &rarr;</a>
+                            </div>
+                        </Col>
+                    </Row>
+                )}
 
                 {/* Action cards */}
                 <Row>
@@ -180,6 +205,24 @@ class LIDashboard extends Component {
                                 </p>
                                 <Button href="/admin/transactions" className="btn-fill" color="primary" block>
                                     View Transactions
+                                </Button>
+                            </CardBody>
+                        </Card>
+                    </Col>
+                    <Col lg="4" md="6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle tag="h5">
+                                    <i className="tim-icons icon-badge" style={{ marginRight: 8, color: '#e14eca' }} />
+                                    Land Verifications
+                                </CardTitle>
+                            </CardHeader>
+                            <CardBody>
+                                <p style={{ color: '#9a9a9a', fontSize: 13, marginBottom: 12 }}>
+                                    Review newly added lands and approve or reject them before they appear to buyers.
+                                </p>
+                                <Button href="/admin/land-verifications" className="btn-fill" color="primary" block>
+                                    Verify Lands
                                 </Button>
                             </CardBody>
                         </Card>
