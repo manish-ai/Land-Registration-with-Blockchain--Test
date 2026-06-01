@@ -281,20 +281,55 @@ class AuditTrail extends Component {
             details.sellerName = sd[0];
             const req = await LandInstance.methods.getRequestDetails(parseInt(rv.reqId)).call();
             details.landId = req[2];
-            details.price = await LandInstance.methods.getPrice(parseInt(req[2])).call();
+            // Use the agreed offer price (req[4]), not the seller's listed price
+            const offerPrice = parseInt(req[4]);
+            details.offerPrice = offerPrice;
+            details.listedPrice = parseInt(await LandInstance.methods.getPrice(parseInt(req[2])).call());
+            // Karnataka charges
+            const stampDuty = Math.round(offerPrice * 0.056);
+            const regFee = Math.round(offerPrice * 0.01);
+            const cess = Math.round(stampDuty * 0.10);
+            details.stampDuty = stampDuty;
+            details.registrationFee = regFee;
+            details.cess = cess;
+            details.totalCharges = stampDuty + regFee + cess;
+            details.grandTotal = offerPrice + stampDuty + regFee + cess;
+            details.pid = await LandInstance.methods.getPID(parseInt(req[2])).call();
           } catch (e) { /* */ }
           break;
         case "OwnershipTransferred":
           details.landId = rv.landId;
           details.newOwnerAddress = rv.newOwner;
           try {
-            const bd = await LandInstance.methods.getBuyerDetails(rv.newOwner).call();
-            details.newOwnerName = bd[0];
+            const bd2 = await LandInstance.methods.getBuyerDetails(rv.newOwner).call();
+            details.newOwnerName = bd2[0];
             const lid = parseInt(rv.landId);
             details.city = await LandInstance.methods.getCity(lid).call();
             details.state = await LandInstance.methods.getState(lid).call();
             details.pid = await LandInstance.methods.getPID(lid).call();
-            details.price = await LandInstance.methods.getPrice(lid).call();
+            // Find the related request to get offer price
+            const reqCount = parseInt(await LandInstance.methods.getRequestsCount().call());
+            for (let ri = 1; ri <= reqCount; ri++) {
+              try {
+                const rq = await LandInstance.methods.getRequestDetails(ri).call();
+                if (parseInt(rq[2]) === lid && rq[1].toLowerCase() === rv.newOwner.toLowerCase() && rq[3]) {
+                  details.offerPrice = parseInt(rq[4]);
+                  break;
+                }
+              } catch (e2) { /* */ }
+            }
+            if (!details.offerPrice) {
+              details.offerPrice = parseInt(await LandInstance.methods.getPrice(lid).call());
+            }
+            // Karnataka charges
+            const op = details.offerPrice;
+            const sd2 = Math.round(op * 0.056);
+            const rf2 = Math.round(op * 0.01);
+            const cs2 = Math.round(sd2 * 0.10);
+            details.stampDuty = sd2;
+            details.registrationFee = rf2;
+            details.cess = cs2;
+            details.grandTotal = op + sd2 + rf2 + cs2;
           } catch (e) { /* */ }
           break;
         default:
@@ -391,8 +426,17 @@ class AuditTrail extends Component {
           <InfoRow label="Seller" value={d.sellerName || d.sellerAddress} />
           <InfoRow label="Seller Address" value={d.sellerAddress} mono />
           {d.landId && <InfoRow label="Land ID" value={d.landId.toString()} />}
-          {d.price && <InfoRow label="Land Price" value={'₹' + parseInt(d.price).toLocaleString('en-IN')} />}
-          <InfoRow label="On-chain Amount" value={d.amount ? (d.amount + ' wei') : 'N/A'} />
+          {d.pid && <InfoRow label="Property PID" value={d.pid} />}
+          {d.offerPrice && <InfoRow label="Agreed Sale Price" value={'₹' + d.offerPrice.toLocaleString('en-IN')} />}
+          {d.listedPrice && d.listedPrice !== d.offerPrice && <InfoRow label="Original Listed Price" value={'₹' + d.listedPrice.toLocaleString('en-IN')} />}
+          {d.stampDuty && <>
+            <div style={{ borderTop: "1px dashed #ccc", margin: "8px 0" }} />
+            <InfoRow label="Stamp Duty (5.6%)" value={'₹' + d.stampDuty.toLocaleString('en-IN')} />
+            <InfoRow label="Registration Fee (1%)" value={'₹' + d.registrationFee.toLocaleString('en-IN')} />
+            <InfoRow label="Cess (10% on SD)" value={'₹' + d.cess.toLocaleString('en-IN')} />
+            <div style={{ borderTop: "2px solid #333", margin: "8px 0" }} />
+            <InfoRow label="Total Transaction" value={'₹' + d.grandTotal.toLocaleString('en-IN')} />
+          </>}
         </>}
 
         {selectedEvent.eventType === "OwnershipTransferred" && <>
@@ -401,7 +445,15 @@ class AuditTrail extends Component {
           <InfoRow label="New Owner Address" value={d.newOwnerAddress} mono />
           {d.city && <InfoRow label="Location" value={d.city + ', ' + d.state} />}
           {d.pid && <InfoRow label="Property PID" value={d.pid} />}
-          {d.price && <InfoRow label="Land Value" value={'₹' + parseInt(d.price).toLocaleString('en-IN')} />}
+          {d.offerPrice && <InfoRow label="Transaction Price" value={'₹' + d.offerPrice.toLocaleString('en-IN')} />}
+          {d.stampDuty && <>
+            <div style={{ borderTop: "1px dashed #ccc", margin: "8px 0" }} />
+            <InfoRow label="Stamp Duty (5.6%)" value={'₹' + d.stampDuty.toLocaleString('en-IN')} />
+            <InfoRow label="Registration Fee (1%)" value={'₹' + d.registrationFee.toLocaleString('en-IN')} />
+            <InfoRow label="Cess (10% on SD)" value={'₹' + d.cess.toLocaleString('en-IN')} />
+            <div style={{ borderTop: "2px solid #333", margin: "8px 0" }} />
+            <InfoRow label="Total Value" value={'₹' + d.grandTotal.toLocaleString('en-IN')} />
+          </>}
         </>}
       </div>
     );

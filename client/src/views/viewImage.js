@@ -4,10 +4,17 @@ import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress, getRole } from '../services/authService';
 import { Spinner } from 'react-bootstrap';
-import { Row, Col, Card, CardBody } from 'reactstrap';
+import { Row, Col, Card, CardBody, Input } from 'reactstrap';
 import "../index.css";
 
 const GOV_FILES = 'http://localhost:4002/api/files';
+
+const STATUS_FILTERS = [
+  { key: 'available', label: 'Available' },
+  { key: 'requested', label: 'Requested' },
+  { key: 'owned', label: 'Owned' },
+  { key: 'all', label: 'All Lands' },
+];
 
 class LandGallery extends Component {
   constructor(props) {
@@ -27,6 +34,12 @@ class LandGallery extends Component {
       requesting: false,
       offerPrice: '',
       offerError: '',
+      // Filters
+      statusFilter: 'available',
+      stateFilter: '',
+      cityFilter: '',
+      minPrice: '',
+      maxPrice: '',
     };
   }
 
@@ -122,6 +135,34 @@ class LandGallery extends Component {
     }
   }
 
+  getFilteredLands = () => {
+    const { lands, statusFilter, stateFilter, cityFilter, minPrice, maxPrice } = this.state;
+
+    return lands.filter(land => {
+      // Status filter
+      if (statusFilter === 'available' && (land.isOwn || land.requested)) return false;
+      if (statusFilter === 'requested' && !land.requested) return false;
+      if (statusFilter === 'owned' && !land.isOwn) return false;
+
+      // State filter
+      if (stateFilter && land.state !== stateFilter) return false;
+
+      // City filter
+      if (cityFilter && land.city !== cityFilter) return false;
+
+      // Price range
+      const p = parseInt(land.price);
+      if (minPrice && p < Number(minPrice)) return false;
+      if (maxPrice && p > Number(maxPrice)) return false;
+
+      return true;
+    });
+  }
+
+  clearFilters = () => {
+    this.setState({ statusFilter: 'available', stateFilter: '', cityFilter: '', minPrice: '', maxPrice: '' });
+  }
+
   render() {
     if (!this.state.web3) {
       return (
@@ -131,23 +172,108 @@ class LandGallery extends Component {
       );
     }
 
-    const { lands, role, showModal, selectedLand, sellerName, isRequested, isOwnLand, verified, requesting, offerPrice, offerError } = this.state;
+    const { lands, role, showModal, selectedLand, sellerName, isRequested, isOwnLand, verified, requesting, offerPrice, offerError, statusFilter, stateFilter, cityFilter, minPrice, maxPrice } = this.state;
     const isSeller = role === 'seller';
+    const filteredLands = isSeller ? lands : this.getFilteredLands();
+
+    // Derive unique states and cities for filter dropdowns
+    const allStates = [...new Set(lands.map(l => l.state))].sort();
+    const allCities = stateFilter
+      ? [...new Set(lands.filter(l => l.state === stateFilter).map(l => l.city))].sort()
+      : [...new Set(lands.map(l => l.city))].sort();
+
+    const hasActiveFilters = statusFilter !== 'available' || stateFilter || cityFilter || minPrice || maxPrice;
 
     return (
       <div className="content">
         <h4 style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 20 }}>{isSeller ? 'My Lands' : 'Available Lands'}</h4>
-        {lands.length === 0 ? (
+
+        {/* Filters - Buyer only */}
+        {!isSeller && (
+          <Card style={{ marginBottom: 20, borderRadius: 10, border: '1px solid #e8ecf0' }}>
+            <CardBody style={{ padding: '16px 20px' }}>
+              {/* Status tabs */}
+              <div style={{ display: 'flex', gap: 0, marginBottom: 14, borderRadius: 8, overflow: 'hidden', border: '1px solid #ddd', width: 'fit-content' }}>
+                {STATUS_FILTERS.map(f => (
+                  <button
+                    key={f.key}
+                    onClick={() => this.setState({ statusFilter: f.key })}
+                    style={{
+                      padding: '7px 18px', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      background: statusFilter === f.key ? '#1a5276' : '#fff',
+                      color: statusFilter === f.key ? '#fff' : '#555',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {f.label}
+                    {f.key !== 'all' && (
+                      <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.8 }}>
+                        ({f.key === 'available' ? lands.filter(l => !l.isOwn && !l.requested).length
+                          : f.key === 'requested' ? lands.filter(l => l.requested).length
+                          : lands.filter(l => l.isOwn).length})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Location & Price filters */}
+              <Row>
+                <Col md="3" sm="6" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4, display: 'block' }}>State</label>
+                  <Input type="select" bsSize="sm" value={stateFilter} onChange={e => this.setState({ stateFilter: e.target.value, cityFilter: '' })}>
+                    <option value="">All States</option>
+                    {allStates.map(s => <option key={s} value={s}>{s}</option>)}
+                  </Input>
+                </Col>
+                <Col md="3" sm="6" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4, display: 'block' }}>City</label>
+                  <Input type="select" bsSize="sm" value={cityFilter} onChange={e => this.setState({ cityFilter: e.target.value })}>
+                    <option value="">All Cities</option>
+                    {allCities.map(c => <option key={c} value={c}>{c}</option>)}
+                  </Input>
+                </Col>
+                <Col md="2" sm="6" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4, display: 'block' }}>Min Price</label>
+                  <Input type="number" bsSize="sm" placeholder="Min" min="0" value={minPrice} onChange={e => this.setState({ minPrice: e.target.value })} />
+                </Col>
+                <Col md="2" sm="6" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4, display: 'block' }}>Max Price</label>
+                  <Input type="number" bsSize="sm" placeholder="Max" min="0" value={maxPrice} onChange={e => this.setState({ maxPrice: e.target.value })} />
+                </Col>
+                <Col md="2" sm="12" style={{ marginBottom: 8, display: 'flex', alignItems: 'flex-end' }}>
+                  {hasActiveFilters && (
+                    <button onClick={this.clearFilters} style={{
+                      padding: '5px 14px', borderRadius: 6, border: '1px solid #ddd', background: '#fff',
+                      fontSize: 12, fontWeight: 600, color: '#888', cursor: 'pointer', width: '100%',
+                    }}>
+                      Reset Filters
+                    </button>
+                  )}
+                </Col>
+              </Row>
+
+              <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                Showing {filteredLands.length} of {lands.length} lands
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {filteredLands.length === 0 ? (
           <Card>
             <CardBody style={{ textAlign: 'center', color: '#888', padding: 40 }}>
               {isSeller
                 ? <>You haven't added any lands yet. Go to <a href="/seller/addLand" style={{ color: '#1a5276', fontWeight: 600 }}>Add Land</a> to list your property.</>
-                : 'No lands are currently listed on the blockchain.'}
+                : statusFilter === 'available' ? 'No available lands match your filters. Try adjusting the filters above.'
+                : statusFilter === 'requested' ? 'You have not requested any lands yet.'
+                : statusFilter === 'owned' ? 'You do not own any lands yet.'
+                : 'No lands match your filters.'}
             </CardBody>
           </Card>
         ) : (
           <Row>
-            {lands.map(land => (
+            {filteredLands.map(land => (
               <Col key={land.id} lg="4" md="6" style={{ marginBottom: 24 }}>
                 <Card style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e8ecf0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', height: '100%', cursor: !isSeller ? 'pointer' : 'default' }}
                   onClick={!isSeller ? () => this.openModal(land) : undefined}>

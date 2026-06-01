@@ -171,7 +171,7 @@ class ApproveRequest extends Component {
                     <LoadingContainer>
                         <Card>
                             <CardHeader>
-                                <CardTitle tag="h4">Requests Info</CardTitle>
+                                <CardTitle tag="h4">Purchase Offers</CardTitle>
                             </CardHeader>
                             <CardBody>
 

@@ -72,17 +72,11 @@ class AddLand extends Component {
       verified: '',
       registered: '',
       file: null,
-      ipfsHash: '',
       propertyPID: '',
       surveyNum: '',
-      file2: null,
-      document: '',
       formError: '',
     }
     this.captureFile = this.captureFile.bind(this);
-    this.addimage = this.addimage.bind(this);
-    this.captureDoc = this.captureDoc.bind(this);
-    this.addDoc = this.addDoc.bind(this);
   }
 
   componentDidMount = async () => {
@@ -109,31 +103,14 @@ class AddLand extends Component {
     }
   };
 
-  addimage = async () => {
-    if (!this.state.file) {
-      this.setState({ ipfsHash: '' });
-      return;
-    }
+  uploadFile = async (file) => {
+    if (!file) return '';
     try {
-      const result = await fileUpload.upload(this.state.file);
-      this.setState({ ipfsHash: result.fileId || '' });
+      const result = await fileUpload.upload(file);
+      return result.fileId || '';
     } catch (e) {
-      console.error('Image upload failed:', e.message);
-      this.setState({ ipfsHash: '' });
-    }
-  }
-
-  addDoc = async () => {
-    if (!this.state.file2) {
-      this.setState({ document: '' });
-      return;
-    }
-    try {
-      const result = await fileUpload.upload(this.state.file2);
-      this.setState({ document: result.fileId || '' });
-    } catch (e) {
-      console.error('Document upload failed:', e.message);
-      this.setState({ document: '' });
+      console.error('File upload failed:', e.message);
+      return '';
     }
   }
 
@@ -155,8 +132,9 @@ class AddLand extends Component {
 
     this.setState({ formError: '' });
 
-    await this.addimage();
-    await this.addDoc();
+    // Upload files and use returned IDs directly (not via state)
+    const imageHash = await this.uploadFile(this.state.file);
+    const documentHash = '';
 
     try {
       await this.state.LandInstance.methods.addLand(
@@ -166,8 +144,8 @@ class AddLand extends Component {
         price.trim(),
         propertyPID.trim(),
         surveyNum.trim(),
-        this.state.ipfsHash,
-        this.state.document)
+        imageHash,
+        documentHash)
         .send({
           from: this.state.account,
           gas: 2100000
@@ -203,12 +181,6 @@ class AddLand extends Component {
     const file = event.target.files[0]
     if (file) this.setState({ file })
   }
-  captureDoc(event) {
-    event.preventDefault()
-    const file2 = event.target.files[0]
-    if (file2) this.setState({ file2 })
-  }
-
   render() {
     if (!this.state.web3) {
       return (
@@ -347,17 +319,6 @@ class AddLand extends Component {
                         <FormFile
                           id="File1"
                           onChange={this.captureFile}
-                        />
-                      </FormGroup>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md="12">
-                      <FormGroup>
-                        <label>Insert Adhar card document</label>
-                        <FormFile
-                          id="File2"
-                          onChange={this.captureDoc}
                         />
                       </FormGroup>
                     </Col>

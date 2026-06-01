@@ -94,7 +94,7 @@ class Dashboard extends Component {
       var verified = await instance.methods.isVerified(currentAddress).call();
       this.setState({ verified: verified });
 
-      // Build buyer's request map: landId → { requestId, status (bool), offerPrice }
+      // Build buyer's request map: landId → { requestId, status (bool), offerPrice, paid }
       var requestsCount = await instance.methods.getRequestsCount().call();
       requestsCount = parseInt(requestsCount);
       let myRequestCount = 0;
@@ -105,7 +105,8 @@ class Dashboard extends Component {
         if (req[1].toLowerCase() === currentAddress.toLowerCase()) {
           myRequestCount++;
           const landId = parseInt(req[2]);
-          myRequests[landId] = { requestId: r, accepted: req[3], offerPrice: parseInt(req[4]) };
+          const paid = await instance.methods.isPaid(r).call();
+          myRequests[landId] = { requestId: r, accepted: req[3], offerPrice: parseInt(req[4]), paid };
         }
       }
 
@@ -261,18 +262,18 @@ class Dashboard extends Component {
               </Card>
             </Col>
           </Row>
-          {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted).length > 0 && (
+          {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted && !l.myRequest.paid).length > 0 && (
             <Row>
               <Col lg="12">
                 <Card style={{ border: '1px solid #d1fae5' }}>
                   <CardHeader>
                     <CardTitle tag="h5" style={{ color: '#166534', marginBottom: 0 }}>
                       <i className="fa fa-check-circle" style={{ marginRight: 8 }} />
-                      Accepted Offers
+                      Accepted Offers - Pending Payment
                     </CardTitle>
                   </CardHeader>
                   <CardBody style={{ paddingTop: 0 }}>
-                    {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted).map(land => (
+                    {this.state.lands.filter(l => l.myRequest && l.myRequest.accepted && !l.myRequest.paid).map(land => (
                       <div key={land.id} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, marginBottom: 8,
@@ -329,6 +330,8 @@ class Dashboard extends Component {
                                 <td>
                                   {land.isOwnLand ? (
                                     <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d4edda', color: '#155724' }}>Owned</span>
+                                  ) : land.myRequest && land.myRequest.accepted && land.myRequest.paid ? (
+                                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>Paid - Awaiting Transfer</span>
                                   ) : land.myRequest && land.myRequest.accepted ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                       <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>Accepted</span>

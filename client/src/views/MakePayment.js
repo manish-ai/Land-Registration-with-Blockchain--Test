@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import ReactDOM from "react-dom";
 import Land from "../artifacts/Land.json";
 import getWeb3 from "../getWeb3";
 import { getWalletAddress } from '../services/authService';
@@ -17,6 +18,22 @@ import {
   Col,
 } from "reactstrap";
 
+// Karnataka stamp duty & registration charges (BBMP/BDA area rates)
+const STAMP_DUTY_RATE = 0.056;       // 5.6% (5% + 0.6% surcharge)
+const REGISTRATION_FEE_RATE = 0.01;  // 1%
+const CESS_ON_STAMP_RATE = 0.10;     // 10% cess on stamp duty amount
+
+function computeCharges(basePrice) {
+  const stampDuty = Math.round(basePrice * STAMP_DUTY_RATE);
+  const registrationFee = Math.round(basePrice * REGISTRATION_FEE_RATE);
+  const cess = Math.round(stampDuty * CESS_ON_STAMP_RATE);
+  const totalCharges = stampDuty + registrationFee + cess;
+  const grandTotal = basePrice + totalCharges;
+  return { stampDuty, registrationFee, cess, totalCharges, grandTotal };
+}
+
+const fmtINR = (n) => '₹' + Number(n).toLocaleString('en-IN');
+
 
 class Dashboard extends Component {
   constructor(props) {
@@ -31,6 +48,9 @@ class Dashboard extends Component {
       // UI feedback
       toast: null,       // { type: 'success'|'error'|'info', message: string }
       processingId: null, // reqId currently being processed
+      // Confirmation modal
+      showConfirm: false,
+      confirmPayment: null,
     }
   }
 
@@ -45,8 +65,23 @@ class Dashboard extends Component {
     this.setState({ toast: null });
   }
 
+  openConfirmModal = (payment) => {
+    this.setState({ showConfirm: true, confirmPayment: payment, toast: null });
+  }
+
+  closeConfirmModal = () => {
+    this.setState({ showConfirm: false, confirmPayment: null });
+  }
+
+  confirmAndPay = () => {
+    const payment = this.state.confirmPayment;
+    this.closeConfirmModal();
+    this.makePayment(payment)();
+  }
+
   makePayment = (payment) => async () => {
-    const { seller, landPID, price, reqId } = payment;
+    const { seller, landPID, offerPrice, reqId } = payment;
+    const charges = computeCharges(offerPrice);
     this.setState({ processingId: reqId, toast: null });
 
     try {
@@ -63,18 +98,18 @@ class Dashboard extends Component {
         return;
       }
 
-      // Step 2: Process bank payment
+      // Step 2: Process bank payment (grand total including stamp duty + registration)
       const bankResult = await govApi.processPayment(
         buyerAadharRes.aadharNumber,
         sellerAadharRes.aadharNumber,
-        price,
+        charges.grandTotal,
         landPID
       );
 
       if (!bankResult.success) {
         let errorMsg = bankResult.message || 'Unknown error';
         if (bankResult.buyerBalance !== undefined && bankResult.requiredAmount !== undefined) {
-          errorMsg += ` (Your balance: ₹${Number(bankResult.buyerBalance).toLocaleString('en-IN')}, Required: ₹${Number(bankResult.requiredAmount).toLocaleString('en-IN')})`;
+          errorMsg += ` (Your balance: ${fmtINR(bankResult.buyerBalance)}, Required: ${fmtINR(bankResult.requiredAmount)})`;
         }
         this.showToast('error', errorMsg);
         this.setState({ processingId: null });
@@ -93,7 +128,10 @@ class Dashboard extends Component {
       });
 
       const txnId = bankResult.transactionId || bankResult.txnId || '';
-      this.showToast('success', 'Payment successful!' + (txnId ? ' Bank TXN: ' + txnId : ''));
+      this.showToast('success',
+        `Payment successful! Property: ${fmtINR(offerPrice)} + Stamp Duty & Fees: ${fmtINR(charges.totalCharges)} = Total: ${fmtINR(charges.grandTotal)}`
+        + (txnId ? ' | Bank TXN: ' + txnId : '')
+      );
       // Update the paid status locally
       this.setState(prev => ({
         processingId: null,
@@ -141,7 +179,8 @@ class Dashboard extends Component {
         if (!request[3]) continue; // not approved yet
 
         var paid = await instance.methods.isPaid(i).call();
-        var price = parseInt(await instance.methods.getPrice(request[2]).call());
+        var offerPrice = parseInt(request[4]);
+        var listedPrice = parseInt(await instance.methods.getPrice(request[2]).call());
         var landPID = await instance.methods.getPID(request[2]).call();
         var city = await instance.methods.getCity(request[2]).call();
         var state = await instance.methods.getState(request[2]).call();
@@ -151,7 +190,7 @@ class Dashboard extends Component {
           if (sellerDetails[0]) sellerName = sellerDetails[0];
         } catch (e) { /* fallback to address */ }
 
-        payments.push({ reqId: i, seller: request[0], sellerName, landPID, city, state, price, paid });
+        payments.push({ reqId: i, seller: request[0], sellerName, landPID, city, state, offerPrice, listedPrice, paid });
       }
       this.setState({ payments });
 
@@ -182,7 +221,7 @@ class Dashboard extends Component {
       );
     }
 
-    const { toast, payments, processingId } = this.state;
+    const { toast, payments, processingId, showConfirm, confirmPayment } = this.state;
 
     return (
       <>
@@ -235,7 +274,10 @@ class Dashboard extends Component {
             <Col lg="12" md="12">
               <Card>
                 <CardHeader>
-                  <CardTitle tag="h4">Payment for Lands</CardTitle>
+                  <CardTitle tag="h4">Land Registration Payments</CardTitle>
+                  <p style={{ color: '#888', fontSize: 12, margin: 0 }}>
+                    As per Karnataka Stamp Act — Stamp Duty 5.6% + Registration Fee 1% + Cess 10% on Stamp Duty
+                  </p>
                 </CardHeader>
                 <CardBody>
                   <Table className="tablesorter" responsive>
@@ -244,37 +286,54 @@ class Dashboard extends Component {
                         <th>#</th>
                         <th>Land Owner</th>
                         <th>Property</th>
-                        <th>Price (₹)</th>
+                        <th>Agreed Price</th>
+                        <th>Stamp Duty & Fees</th>
+                        <th>Total Payable</th>
                         <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {payments.length > 0 ? payments.map(p => (
-                        <tr key={p.reqId}>
-                          <td>{p.reqId}</td>
-                          <td>{p.sellerName}</td>
-                          <td>{p.landPID}<br /><small style={{ color: '#888' }}>{p.city}, {p.state}</small></td>
-                          <td>₹{p.price.toLocaleString('en-IN')}</td>
-                          <td>
-                            {p.paid ? (
-                              <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>
-                                Paid
-                              </span>
-                            ) : (
-                              <Button
-                                onClick={this.makePayment(p)}
-                                disabled={processingId === p.reqId}
-                                color="success"
-                                size="sm"
-                                className="btn-fill"
-                              >
-                                {processingId === p.reqId ? 'Processing...' : 'Make Payment'}
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      )) : (
-                        <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: 20 }}>
+                      {payments.length > 0 ? payments.map(p => {
+                        const charges = computeCharges(p.offerPrice);
+                        return (
+                          <tr key={p.reqId}>
+                            <td>{p.reqId}</td>
+                            <td>{p.sellerName}</td>
+                            <td>{p.landPID}<br /><small style={{ color: '#888' }}>{p.city}, {p.state}</small></td>
+                            <td>
+                              <div>{fmtINR(p.offerPrice)}</div>
+                              {p.offerPrice !== p.listedPrice && (
+                                <small style={{ color: '#888', textDecoration: 'line-through' }}>{fmtINR(p.listedPrice)}</small>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ fontSize: 13 }}>{fmtINR(charges.totalCharges)}</div>
+                              <small style={{ color: '#888' }}>
+                                SD: {fmtINR(charges.stampDuty)} + Reg: {fmtINR(charges.registrationFee)} + Cess: {fmtINR(charges.cess)}
+                              </small>
+                            </td>
+                            <td style={{ fontWeight: 700 }}>{fmtINR(charges.grandTotal)}</td>
+                            <td>
+                              {p.paid ? (
+                                <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#d1fae5', color: '#166534' }}>
+                                  Paid
+                                </span>
+                              ) : (
+                                <Button
+                                  onClick={() => this.openConfirmModal(p)}
+                                  disabled={processingId === p.reqId}
+                                  color="success"
+                                  size="sm"
+                                  className="btn-fill"
+                                >
+                                  {processingId === p.reqId ? 'Processing...' : 'Pay Now'}
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      }) : (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', color: '#888', padding: 20 }}>
                           No approved payments pending. Offers must be accepted by the seller before payment.
                         </td></tr>
                       )}
@@ -285,6 +344,71 @@ class Dashboard extends Component {
             </Col>
           </Row>
         </div>
+
+        {/* Payment Confirmation Modal */}
+        {showConfirm && confirmPayment && ReactDOM.createPortal(
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.35)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={this.closeConfirmModal}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 480, maxWidth: '90vw', boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+              onClick={e => e.stopPropagation()}>
+              <h4 style={{ color: '#1d1d2b', marginBottom: 4, fontWeight: 600 }}>Confirm Payment</h4>
+              <p style={{ color: '#666', fontSize: 13, marginBottom: 16 }}>
+                {confirmPayment.landPID} &middot; {confirmPayment.city}, {confirmPayment.state}
+              </p>
+
+              {(() => {
+                const c = computeCharges(confirmPayment.offerPrice);
+                return (
+                  <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+                      Payment Summary (Karnataka)
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>Agreed Sale Price</span>
+                      <span style={{ color: '#333', fontWeight: 600 }}>{fmtINR(confirmPayment.offerPrice)}</span>
+                    </div>
+                    {confirmPayment.offerPrice !== confirmPayment.listedPrice && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0 6px', fontSize: 11 }}>
+                        <span style={{ color: '#999' }}>Original Listed Price</span>
+                        <span style={{ color: '#999', textDecoration: 'line-through' }}>{fmtINR(confirmPayment.listedPrice)}</span>
+                      </div>
+                    )}
+                    <div style={{ borderTop: '1px solid #e0e0e0', margin: '4px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>Stamp Duty (5.6%)</span>
+                      <span style={{ color: '#333' }}>{fmtINR(c.stampDuty)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>Registration Fee (1%)</span>
+                      <span style={{ color: '#333' }}>{fmtINR(c.registrationFee)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>Cess (10% on Stamp Duty)</span>
+                      <span style={{ color: '#333' }}>{fmtINR(c.cess)}</span>
+                    </div>
+                    <div style={{ borderTop: '2px solid #333', margin: '8px 0 4px' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 0', fontSize: 15 }}>
+                      <span style={{ color: '#333', fontWeight: 700 }}>Total Payable</span>
+                      <span style={{ color: '#166534', fontWeight: 700 }}>{fmtINR(c.grandTotal)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e' }}>
+                Payment will be debited from your bank account linked to your Aadhaar. This action cannot be reversed.
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button color="secondary" outline onClick={this.closeConfirmModal} style={{ flex: 1 }}>Cancel</Button>
+                <Button color="success" className="btn-fill" onClick={this.confirmAndPay} style={{ flex: 1 }}>
+                  Confirm & Pay
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </>
     );
   }
