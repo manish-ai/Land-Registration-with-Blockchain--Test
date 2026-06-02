@@ -85,18 +85,21 @@ if (!citizenCols.includes('wallet_address')) {
 }
 
 // Seed blockchain wallet mappings (idempotent — safe to run every startup)
-const setWallet = db.prepare('UPDATE citizens SET wallet_address = ?, role = ? WHERE aadhar_number = ?');
-setWallet.run('0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0', 'seller', '123456789012'); // Rahul Sharma
-setWallet.run('0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b', 'buyer',  '234567890123'); // Priya Patel
-
-// Map remaining citizens to Ganache accounts (accounts 3-8) so new registrations work
+// Roles are NOT pre-assigned — they are detected from the blockchain on login.
+// Users register as buyer or seller via the registration pages, then the auth
+// route's detectRoleFromBlockchain() sets the role dynamically.
 const setWalletIfNull = db.prepare('UPDATE citizens SET wallet_address = ? WHERE aadhar_number = ? AND wallet_address IS NULL');
+setWalletIfNull.run('0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0', '123456789012'); // Rahul Sharma
+setWalletIfNull.run('0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b', '234567890123'); // Priya Patel
 setWalletIfNull.run('0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d', '345678901234'); // Amit Kumar
 setWalletIfNull.run('0xd03ea8624C8C5987235048901fB614fDcA89b117', '456789012345'); // Sneha Reddy
 setWalletIfNull.run('0x95cED938F7991cd0dFcb48F0a06a40FA1aF46EBC', '567890123456'); // Vikram Singh
 setWalletIfNull.run('0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9', '678901234567'); // Deepa Nair
 setWalletIfNull.run('0x28a8746e75304c0780E011BEd21C72cD78cd535E', '789012345678'); // Rajesh Gupta
 setWalletIfNull.run('0xACa94ef8bD5ffEE41947b4585a84BdA5a3d3DA6E', '890123456789'); // Anita Desai
+
+// Clear any previously-hardcoded roles (except inspector) so blockchain detection is fresh
+db.prepare("UPDATE citizens SET role = NULL WHERE role IS NOT NULL AND role != 'inspector'").run();
 
 // Add Land Inspector account if not already present
 db.prepare(`INSERT OR IGNORE INTO citizens
