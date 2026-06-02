@@ -1,6 +1,6 @@
 # Manual Setup Guide (for Node 24+ / any Node version)
 
-This guide avoids the setup/start scripts and walks through each step manually. It uses **nvm** to install Node 20 LTS, which is compatible with all project dependencies.
+This guide walks through each step manually. It uses **nvm** to install Node 20 LTS, which is compatible with all project dependencies.
 
 > **Why nvm?** This project uses `react-scripts 5.0.1`, `ganache`, `truffle`, and `better-sqlite3` — all of which have compatibility issues with Node 24. Node 20 LTS is the most stable version for this stack.
 
@@ -108,7 +108,7 @@ cd Land-Registration-with-Blockchain--Test
 npx ganache --port 7545 --deterministic --accounts 10 --networkId 5777
 ```
 
-You'll see 10 accounts with private keys printed. **Keep this terminal open** — it's your blockchain.
+You'll see 10 accounts printed. **Keep this terminal open** — it's your local blockchain.
 
 ### Terminal 2: Deploy Smart Contracts
 
@@ -154,60 +154,15 @@ npm start
 
 Browser should open automatically at **http://localhost:4000**.
 
-If it doesn't, manually open Chrome and go to: http://localhost:4000
+If it doesn't, manually open any browser and go to: http://localhost:4000
 
 **Keep this terminal open.**
 
 ---
 
-## MetaMask Setup
+## No MetaMask Required
 
-### Install MetaMask Extension
-
-1. Open **Google Chrome**
-2. Go to **https://metamask.io/download/**
-3. Click **Install MetaMask for Chrome** > **Add to Chrome** > **Add Extension**
-4. Click **Create a new wallet**
-5. Accept the terms, create any password
-6. **Skip** the Secret Recovery Phrase backup (this is just for local testing)
-7. Click through until setup is complete
-
-### Add the Ganache Network
-
-1. Click the **MetaMask fox icon** in the browser toolbar
-2. Click the **network dropdown** at the top (says "Ethereum Mainnet")
-3. Click **Add network** > **Add a network manually**
-4. Fill in:
-
-| Field | Value |
-|-------|-------|
-| Network Name | `Ganache Local` |
-| New RPC URL | `http://127.0.0.1:7545` |
-| Chain ID | `5777` |
-| Currency Symbol | `ETH` |
-
-5. Click **Save**
-6. Select **Ganache Local** from the network dropdown
-
-### Import Test Accounts
-
-For each account you need:
-
-1. Click the **MetaMask fox icon**
-2. Click the **account icon** (circle at top-right)
-3. Click **Import account**
-4. Select **Private Key** as the type
-5. Paste the private key from the table below
-6. Click **Import**
-7. (Optional) Click the account name to rename it
-
-| Role | Name | Private Key |
-|------|------|-------------|
-| **Land Inspector** | Inspector | `0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d` |
-| **Seller** | Deepa Nair | `0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1` |
-| **Buyer** | Priya Patel | `0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c` |
-
-Import at minimum these 3 accounts. Each should show ~1000 ETH (test ETH, not real).
+This application connects directly to the local Ganache blockchain — **no browser extensions or wallet setup needed**. The government portal assigns blockchain wallet addresses to each citizen automatically based on their Aadhar identity. Just open the app in any browser and log in.
 
 ---
 
@@ -273,12 +228,6 @@ Make sure you're using Node 20:
 node -v
 ```
 If it shows v24.x, run `nvm use 20` first.
-
-### MetaMask shows "Internal JSON-RPC error" or transactions fail
-1. Make sure MetaMask is on the **Ganache Local** network (not Ethereum Mainnet)
-2. Make sure the correct account is selected for the role you're using
-3. If you restarted Ganache, reset MetaMask:
-   MetaMask > Settings > Advanced > **Clear activity tab data**
 
 ### "Government services unavailable" in the app
 The Gov Portal isn't running. Start it:

@@ -70,7 +70,7 @@ Land-Registration-with-Blockchain/
 
 ## Detailed Setup Guide
 
-For a complete step-by-step walkthrough including **MetaMask setup**, **importing accounts**, and **registering users**, see **[SETUP_GUIDE.md](SETUP_GUIDE.md)**.
+For a complete step-by-step walkthrough including **registering users** and **running the demo**, see **[SETUP_GUIDE.md](SETUP_GUIDE.md)**.
 
 ## Prerequisites
 

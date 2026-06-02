@@ -36,7 +36,7 @@ Explain while pointing:
 | **Blockchain** | Ganache (local Ethereum) | Like the actual Ethereum network, but local for testing |
 | **Frontend** | React.js | The website buyers/sellers/inspectors use |
 | **Gov Portal** | Node.js + Express + SQLite | Simulates Karnataka govt services — Aadhaar, PAN, land records |
-| **MetaMask** | Browser wallet | Each person's digital identity on the blockchain |
+| **Web3.js** | Blockchain library | Connects the frontend directly to the blockchain |
 
 > "Three services run together:"
 > - **Ganache on port 7545** — our private blockchain
@@ -44,6 +44,8 @@ Explain while pointing:
 > - **React app on port 4000** — the user-facing application
 
 > "The smart contract is written in Solidity — 392 lines of code that enforce every rule: who can register, who can sell, who can transfer. Once deployed, even I cannot change these rules."
+
+> "One thing to note: there's no MetaMask or browser extension needed. The app connects directly to the local blockchain. The government portal assigns each citizen a wallet address based on their Aadhaar identity — just like a real government system would."
 
 ---
 
@@ -71,14 +73,14 @@ Point out these key sections:
 ## PART 4: Live Demo (12-15 minutes)
 
 ### Pre-requisite: Have everything running before the demo
-Make sure `./start.sh` has been run, MetaMask is set up with all 3 accounts (Inspector, Seller, Buyer), and contracts are deployed fresh.
+Make sure `./start.sh` has been run and contracts are deployed fresh. No browser extensions needed.
 
 ---
 
 ### Step 1: Show the Login Page (1 min)
 **[Browser: http://localhost:4000]**
 
-> "This is the entry point. Every user authenticates with Aadhaar + OTP — the same way DigiLocker works in India. Our Gov Portal verifies the identity."
+> "This is the entry point. Every user authenticates with Aadhaar + OTP — the same way DigiLocker works in India. Our Gov Portal verifies the identity and assigns a blockchain wallet address automatically."
 
 Show the login form. Point out:
 - Aadhaar/PAN input
@@ -90,9 +92,8 @@ Show the login form. Point out:
 ---
 
 ### Step 2: Register a Seller (2 min)
-**[Switch MetaMask to Seller account (Deepa Nair)]**
 
-> "I'm switching my MetaMask wallet to Deepa Nair's account. In the real world, this would be the seller's personal wallet."
+> "I'm going to register Deepa Nair as a seller. The government portal has her Aadhaar on file and will assign her a blockchain wallet address automatically."
 
 1. Click **Register as Seller**
 2. Fill the form:
@@ -101,28 +102,23 @@ Show the login form. Point out:
    - PAN: `FGHIJ6789K` — click Verify
    - Upload any document
 3. Click **Register on Blockchain**
-4. **MetaMask pops up** — "This is the key moment. MetaMask is asking Deepa to sign a transaction. This costs gas (a tiny fee). Once she confirms, her identity is permanently recorded on the blockchain."
-5. Confirm in MetaMask
 
 > "Notice: the Aadhaar verification happened off-chain via the Gov Portal API. But the registration itself is on-chain. This is a hybrid architecture — private data stays with the government, public commitments go on-chain."
 
 ---
 
 ### Step 3: Land Inspector Verifies the Seller (1 min)
-**[Switch MetaMask to Land Inspector]**
 
 1. Login as LI (Aadhaar: `100000000001`, OTP: `1234`)
 2. Go to **Seller Info**
 3. Show Deepa Nair is listed but unverified
 4. Click **Verify**
-5. MetaMask confirm
 
 > "The Land Inspector reviews the documents and verifies. In Karnataka, this is like the Tehsildar approving a mutation request. But here, it's on-chain — there's a permanent record of who verified whom and when."
 
 ---
 
 ### Step 4: Register & Verify a Buyer (1 min — do it quickly)
-**[Switch MetaMask to Buyer account (Priya Patel)]**
 
 - Register as buyer (Aadhaar: `234567890123`, PAN: `BCDEF2345G`)
 - Switch to LI, verify the buyer
@@ -132,7 +128,6 @@ Show the login form. Point out:
 ---
 
 ### Step 5: Seller Adds a Land (2 min)
-**[Switch MetaMask to Seller (Deepa Nair)]**
 
 1. Login as Seller
 2. Go to **Add Land**
@@ -143,7 +138,7 @@ Show the login form. Point out:
    - PID: `KA-BLR-2024-001`
    - Survey Number: `SY-456`
    - Upload a land image
-4. Click **Add Land** -> MetaMask confirm
+4. Click **Add Land**
 
 > "72 lakhs for a 1200 sq ft site in Yelahanka — sounds about right for Bangalore!"
 >
@@ -152,7 +147,6 @@ Show the login form. Point out:
 ---
 
 ### Step 6: Land Inspector Verifies the Land (1 min)
-**[Switch to LI]**
 
 1. Go to **Land Verifications**
 2. Show the land details
@@ -163,7 +157,6 @@ Show the login form. Point out:
 ---
 
 ### Step 7: Buyer Browses the Gallery & Makes an Offer (2 min)
-**[Switch MetaMask to Buyer (Priya Patel)]**
 
 1. Login as Buyer
 2. Go to **Land Gallery**
@@ -171,25 +164,23 @@ Show the login form. Point out:
 4. Click on the Bangalore land card
 5. Modal opens with full details
 6. Enter offer price: `6800000` (68 lakhs — negotiating down from 72)
-7. Click **Request Land** -> MetaMask confirm
+7. Click **Request Land**
 
 > "Priya is offering 68 lakhs instead of the listed 72 lakhs. This offer amount is stored on-chain in the `LandRequest` struct. It becomes the agreed transaction price if the seller accepts."
 
 ---
 
 ### Step 8: Seller Accepts the Offer (1 min)
-**[Switch to Seller]**
 
 1. Login, go to **Purchase Offers**
 2. Show: Priya's offer of 68 lakhs, with the "-5.6% vs listed" indicator
-3. Click **Accept Offer** -> MetaMask confirm
+3. Click **Accept Offer**
 
 > "Deepa sees the offer is 5.6% below her asking price but decides to accept. This approval is recorded on-chain."
 
 ---
 
 ### Step 9: Buyer Makes Payment (2 min) — THE KEY DEMO MOMENT
-**[Switch to Buyer]**
 
 1. Login, go to **Payments**
 2. Show the payment summary with **Karnataka charges breakdown**:
@@ -203,19 +194,18 @@ Show the login form. Point out:
 
 > "In the real world, you'd pay this at the Sub-Registrar office. Here, it's calculated automatically and the payment is processed via the Gov Portal's bank API."
 
-3. Click **Confirm Payment** -> Show the confirmation modal -> MetaMask confirm
+3. Click **Confirm Payment** -> Show the confirmation modal
 
 > "Two things happen: the bank transfer is processed off-chain (via Gov Portal), and a `PaymentDone` event is emitted on-chain as proof."
 
 ---
 
 ### Step 10: Land Inspector Approves Transfer (1 min)
-**[Switch to LI]**
 
 1. Go to **Approve Transfer**
 2. Click **View Details** on the transaction
 3. Show the modal: Property details, seller, buyer, full charge breakdown
-4. Click **Approve Transfer** -> MetaMask confirm
+4. Click **Approve Transfer**
 
 > "The Land Inspector reviews everything one final time and approves. The `LandOwnershipTransfer` function executes, changing `LandOwner[landId]` from Deepa's address to Priya's address. This is irreversible."
 
@@ -234,9 +224,8 @@ Show the login form. Point out:
 ---
 
 ### Step 12: Verify Ownership Changed (30 sec)
-**[Switch to Buyer]**
 
-1. Go to **Owned Lands**
+1. Login as Buyer, go to **Owned Lands**
 2. Show the Bangalore land now appears under Priya's ownership
 
 > "The transfer is complete. Priya now owns the land on-chain. If she tries to view the gallery, this land shows as 'Owned' instead of 'Available'."
@@ -278,9 +267,9 @@ Show the login form. Point out:
 
 > "The blockchain maintains a complete history. You can trace every ownership change via events — `LandAdded`, `OwnershipTransferred` — with timestamps. This is actually *better* for dispute resolution because the evidence is tamper-proof. In our system, the Audit Trail page shows this entire history. A court could verify the chain of ownership directly from the blockchain."
 
-### Q5: "What is gas? Why does MetaMask ask to confirm transactions?"
+### Q5: "What is gas? Why do transactions need confirmation?"
 
-> "Gas is the computational cost of executing a transaction on Ethereum. Think of it as a processing fee — like the stamp duty you pay at the registrar's office. MetaMask asks for confirmation because every write operation to the blockchain costs gas. Read operations (viewing data) are free. In our demo, we're using test ETH on Ganache, so it costs nothing real."
+> "Gas is the computational cost of executing a transaction on Ethereum. Think of it as a processing fee — like the stamp duty you pay at the registrar's office. Every write operation to the blockchain costs gas. Read operations (viewing data) are free. In our demo, we're using test ETH on Ganache, so it costs nothing real. In production, Layer 2 solutions like Polygon reduce gas costs to fractions of a cent."
 
 ### Q6: "Is the Aadhaar data stored on the blockchain?"
 
@@ -292,7 +281,7 @@ Show the login form. Point out:
 
 ### Q8: "What technology stack did you use?"
 
-> "Frontend is React 18 with React Router v6. Smart contracts are in Solidity, compiled and deployed using Truffle. The blockchain is Ganache — a local Ethereum testnet. The Government Portal is a Node.js Express server with SQLite. MetaMask is the wallet interface. Web3.js is the library that connects React to the blockchain."
+> "Frontend is React 18 with React Router v6. Smart contracts are in Solidity, compiled and deployed using Truffle. The blockchain is Ganache — a local Ethereum testnet. The Government Portal is a Node.js Express server with SQLite. Web3.js is the library that connects the frontend directly to the blockchain. No browser extensions are needed — the app communicates with the blockchain via HTTP."
 
 ### Q9: "How are the Karnataka stamp duty charges calculated?"
 
@@ -308,7 +297,7 @@ Show the login form. Point out:
 
 1. **Pre-register everything the night before.** Run through the full flow once. On demo day, you can either show a fresh registration OR have users pre-registered and jump straight to the land transaction (faster).
 
-2. **Keep MetaMask visible.** Every time the MetaMask popup appears, pause and explain — "This is the blockchain transaction being signed." It's the most visual proof that blockchain is involved.
+2. **Show the Ganache terminal.** Every time a transaction goes through, Ganache logs it in the terminal. Point at it and say "See? The blockchain just recorded that." It's visual proof that blockchain is involved.
 
 3. **If something fails**, don't panic. Say "The blockchain rejected this transaction because [the user isn't verified / the land is already registered / etc]. This is actually the system working correctly — enforcing rules."
 

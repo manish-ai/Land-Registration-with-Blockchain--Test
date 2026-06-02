@@ -834,10 +834,11 @@ This prevents cryptic `fetch failed` errors during the demo if the Gov Portal is
 
 ---
 
-## MetaMask Account Switching (Demo Notes)
+## Account Management (Demo Notes)
 
-The DApp identifies users by their MetaMask wallet address. During the demo, you need
-different Ganache accounts for each role:
+The DApp identifies users by their blockchain wallet address. The government portal
+assigns wallet addresses automatically based on Aadhaar identity — no MetaMask or
+browser extensions needed.
 
 | Role | Ganache Account | Purpose |
 |------|----------------|---------|
@@ -845,11 +846,9 @@ different Ganache accounts for each role:
 | Seller (Rahul Sharma) | Account 1 | Registers as seller, adds land |
 | Buyer (Priya Patel) | Account 2 | Registers as buyer, requests/pays |
 
-**How to switch:** In MetaMask, click the account icon → select the correct imported
-Ganache account. The DApp auto-detects the active account on page load.
-
-**Import Ganache accounts into MetaMask:** Settings → Import Account → paste private key
-from Ganache's account list.
+**How to switch roles:** Simply log out and log in with a different Aadhaar number.
+The app connects directly to Ganache via HTTP — all accounts are unlocked and
+transactions are signed automatically.
 
 ---
 

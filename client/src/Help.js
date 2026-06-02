@@ -87,7 +87,7 @@ const faqs = [
       },
       {
         q: "Can the same wallet address register as both Buyer and Seller?",
-        a: "No. Each Ethereum wallet address can only register under one role (Buyer or Seller) due to a single RegisteredAddress mapping in the smart contract. Use separate wallet addresses (from Ganache) for testing different roles.",
+        a: "No. Each Ethereum wallet address can only register under one role (Buyer or Seller) due to a single RegisteredAddress mapping in the smart contract. The government portal assigns a unique wallet address to each citizen, so simply use different Aadhar credentials to test different roles.",
       },
       {
         q: "Why is my session lost when I open a new browser tab?",

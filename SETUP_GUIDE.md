@@ -1,6 +1,6 @@
 # Land Registration DApp - Complete Setup Guide
 
-This guide walks you through everything from scratch, including MetaMask setup and registering users. No prior software engineering knowledge required.
+This guide walks you through everything from scratch. No prior software engineering knowledge required. **No browser extensions or wallet setup needed.**
 
 ---
 
@@ -50,79 +50,9 @@ This automatically installs all dependencies. Wait for it to say **"Setup Comple
 
 ---
 
-## Part 3: Install and Configure MetaMask
+## Part 3: Start the Application
 
-MetaMask is a browser extension that acts as your blockchain wallet. Each user (seller, buyer, inspector) needs a different MetaMask account.
-
-### 3.1 Install MetaMask Extension
-
-1. Open **Google Chrome**
-2. Go to **https://metamask.io/download/**
-3. Click **Install MetaMask for Chrome**
-4. Click **Add to Chrome** > **Add Extension**
-5. MetaMask will open automatically. Click **Create a new wallet**
-6. Accept the terms, create a password (anything you'll remember)
-7. You can **skip** the Secret Recovery Phrase backup for now (this is just for local testing)
-8. Click through until setup is complete
-
-### 3.2 Add the Ganache Local Network
-
-MetaMask needs to know about our local blockchain (Ganache).
-
-1. Click the **MetaMask fox icon** in your browser toolbar
-2. Click the **network dropdown** at the top (it says "Ethereum Mainnet")
-3. Click **Add network** (or **Add a network manually** at the bottom)
-4. Fill in these details:
-
-| Field | Value |
-|-------|-------|
-| Network Name | `Ganache Local` |
-| New RPC URL | `http://127.0.0.1:7545` |
-| Chain ID | `5777` |
-| Currency Symbol | `ETH` |
-
-5. Click **Save**
-6. Select **Ganache Local** from the network dropdown
-
-### 3.3 Import Test Accounts into MetaMask
-
-Our local blockchain has 10 pre-funded accounts. You need to import the ones you'll use. Each account has a **private key** that you copy-paste into MetaMask.
-
-#### How to import an account:
-
-1. Click the **MetaMask fox icon**
-2. Click the **account icon** (circle at top-right)
-3. Click **Import account**
-4. Select **Private Key** as the type
-5. Paste the private key from the table below
-6. Click **Import**
-7. (Optional) Click the account name to rename it (e.g., "Land Inspector")
-
-#### Account Private Keys
-
-Import the accounts you need. At minimum, import the **Land Inspector**, one **Seller**, and one **Buyer**.
-
-| Role | Name | Private Key |
-|------|------|-------------|
-| **Land Inspector** | Land Inspector | `0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d` |
-| **Seller** | Rahul Sharma | `0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1` |
-| **Buyer** | Priya Patel | `0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c` |
-| Available | Amit Kumar | `0x646f1ce2fdad0e6deeeb5c7e8e5543bdde65e86029e2fd9fc169899c440a7913` |
-| Available | Sneha Reddy | `0xadd53f9a7e588d003326d1cbf9e4a43c061aadd9bc938c843a79e7b4fd2ad743` |
-| Available | Vikram Singh | `0x395df67f0c2d2d9fe1ad08d1bc8b6627011959b79c53d7dd6a3536a33ab8a4fd` |
-| Available | Deepa Nair | `0xe485d098507f54e7733a205420dfddbe58db035fa577fc294ebd14db90767a52` |
-| Available | Rajesh Gupta | `0xa453611d9419d0e56f499079478fd72c37b251a94bfde4d19872c44cf65386e3` |
-| Available | Anita Desai | `0x829e924fdf021ba3dbbc4225edfece9aca04b929d6e75613329ca6f1d31c0bb4` |
-
-> **Important:** These are test-only private keys for the local Ganache blockchain. Never use them for real cryptocurrency.
-
-After importing, you should see each account has **~1000 ETH** (test ETH, not real).
-
----
-
-## Part 4: Start the Application
-
-### 4.1 Start all services
+### 3.1 Start all services
 
 Open Terminal, go to the project folder, and run:
 
@@ -134,59 +64,55 @@ Wait until you see the message with all the URLs. The browser should open automa
 
 If the browser doesn't open, manually go to: **http://localhost:4000**
 
+> **That's it!** No MetaMask, no browser extensions, no wallet setup. The app connects directly to the local blockchain and the government portal assigns wallet addresses automatically based on your Aadhaar identity.
+
 ---
 
-## Part 5: Register Users on the Blockchain
+## Part 4: Register Users on the Blockchain
 
 The application has three roles. You must register them **in this specific order** because the Land Inspector needs to verify the others.
 
 **Login credentials for all users:** OTP is always **`1234`**
 
-### 5.1 The Land Inspector (Already Set Up)
+### 4.1 The Land Inspector (Already Set Up)
 
 The Land Inspector (admin) is automatically registered when the contract is deployed. You just need to log in.
 
-1. In MetaMask, **switch to the Land Inspector account**
-   - Click the MetaMask icon > click the account selector at top > choose the Land Inspector account
-2. Go to **http://localhost:4000** (refresh if already open)
-3. Enter Aadhaar: **`100000000001`**
-4. Select type: **Aadhaar**
-5. Click **Send OTP**, then enter OTP: **`1234`**
-6. Click **Verify & Login**
-7. You should land on the **Land Inspector Dashboard**
+1. Go to **http://localhost:4000**
+2. Enter Aadhaar: **`100000000001`**
+3. Select type: **Aadhaar**
+4. Click **Send OTP**, then enter OTP: **`1234`**
+5. Click **Verify & Login**
+6. You should land on the **Land Inspector Dashboard**
 
 > The Land Inspector doesn't need registration — they're pre-configured as the contract deployer.
 
-### 5.2 Register a Seller
+### 4.2 Register a Seller
 
-1. In MetaMask, **switch to the Seller account** (e.g., Rahul Sharma)
-2. Go to **http://localhost:4000**
-3. Click **Register as Seller**
-4. Fill in the form:
+1. Go to **http://localhost:4000**
+2. Click **Register as Seller**
+3. Fill in the form:
    - **Full Name:** `Deepa Nair` (must match exactly as in the government records)
    - **Age:** `30` (must be 21 or older)
    - **Owned Lands:** `2` (any number)
    - **Aadhaar Number:** `678901234567` — click **Verify** (should show green checkmark)
    - **PAN Number:** `FGHIJ6789K` — click **Verify** (should show green checkmark)
    - **Identity Document:** Upload any PDF or image file
-5. Click **Register on Blockchain**
-6. **MetaMask will pop up** asking to confirm the transaction — click **Confirm**
-7. Wait for the transaction to process. You'll be redirected to the login page.
+4. Click **Register on Blockchain**
+5. Wait for the transaction to process. You'll be redirected to the login page.
 
 #### Verify the Seller (as Land Inspector)
 
-1. In MetaMask, **switch back to the Land Inspector account**
-2. Log in as Land Inspector (Aadhaar: `100000000001`, OTP: `1234`)
-3. Go to **Seller Info** from the dashboard
-4. Find the newly registered seller
-5. Click **Verify** to approve them
+1. Log in as Land Inspector (Aadhaar: `100000000001`, OTP: `1234`)
+2. Go to **Seller Info** from the dashboard
+3. Find the newly registered seller
+4. Click **Verify** to approve them
 
-### 5.3 Register a Buyer
+### 4.3 Register a Buyer
 
-1. In MetaMask, **switch to the Buyer account** (e.g., Priya Patel)
-2. Go to **http://localhost:4000**
-3. Click **Register as Buyer**
-4. Fill in the form:
+1. Go to **http://localhost:4000**
+2. Click **Register as Buyer**
+3. Fill in the form:
    - **Full Name:** `Priya Patel` (must match government records exactly)
    - **Age:** `28`
    - **City:** `Mumbai`
@@ -194,81 +120,68 @@ The Land Inspector (admin) is automatically registered when the contract is depl
    - **Aadhaar Number:** `234567890123` — click **Verify**
    - **PAN Number:** `BCDEF2345G` — click **Verify**
    - **Identity Document:** Upload any PDF or image file
-5. Click **Register on Blockchain**
-6. **MetaMask will pop up** — click **Confirm**
-7. Wait for redirect to login page.
+4. Click **Register on Blockchain**
+5. Wait for redirect to login page.
 
 #### Verify the Buyer (as Land Inspector)
 
-1. In MetaMask, **switch to the Land Inspector account**
-2. Log in as Land Inspector
-3. Go to **Buyer Info** from the dashboard
-4. Find the newly registered buyer
-5. Click **Verify** to approve them
+1. Log in as Land Inspector
+2. Go to **Buyer Info** from the dashboard
+3. Find the newly registered buyer
+4. Click **Verify** to approve them
 
 ---
 
-## Part 6: Full Demo Workflow
+## Part 5: Full Demo Workflow
 
 Now that everyone is registered and verified, here's the complete land transaction flow:
 
-### 6.1 Seller Adds a Land
+### 5.1 Seller Adds a Land
 
-1. In MetaMask, switch to the **Seller account**
-2. Log in as Seller (use their Aadhaar + OTP `1234`)
-3. Go to **Add Land** from the dashboard
-4. Fill in land details:
+1. Log in as Seller (use their Aadhaar + OTP `1234`)
+2. Go to **Add Land** from the dashboard
+3. Fill in land details:
    - **Property PID:** `KA-BLR-2024-001` (use a PID from the government records)
    - The area, city, state will auto-fill from government records
    - **Price:** Enter a price in INR (e.g., `7200000`)
    - **Upload a land image** (any image file)
-5. Click **Add Land**
-6. MetaMask pops up — click **Confirm**
+4. Click **Add Land**
 
-### 6.2 Land Inspector Verifies the Land
+### 5.2 Land Inspector Verifies the Land
 
-1. Switch to **Land Inspector** in MetaMask
-2. Log in as Land Inspector
-3. Go to **Land Verifications**
-4. Find the newly added land
-5. Click **Verify** to approve it
+1. Log in as Land Inspector
+2. Go to **Land Verifications**
+3. Find the newly added land
+4. Click **Verify** to approve it
 
-### 6.3 Buyer Makes an Offer
+### 5.3 Buyer Makes an Offer
 
-1. Switch to **Buyer account** in MetaMask
-2. Log in as Buyer
-3. On the dashboard, find the verified land in the **Available Lands** table
-4. Click **Make Offer**
-5. Enter your offer price (e.g., `7200000`)
-6. Click **Submit Offer**
-7. MetaMask pops up — click **Confirm**
+1. Log in as Buyer
+2. On the dashboard, find the verified land in the **Available Lands** table
+3. Click **Make Offer**
+4. Enter your offer price (e.g., `7200000`)
+5. Click **Submit Offer**
 
-### 6.4 Seller Accepts the Offer
+### 5.4 Seller Accepts the Offer
 
-1. Switch to **Seller account** in MetaMask
-2. Log in as Seller
-3. Go to **Buyer Requests** from the dashboard
-4. Find the buyer's offer
-5. Click **Accept**
-6. MetaMask pops up — click **Confirm**
+1. Log in as Seller
+2. Go to **Buyer Requests** from the dashboard
+3. Find the buyer's offer
+4. Click **Accept**
 
-### 6.5 Buyer Makes Payment
+### 5.5 Buyer Makes Payment
 
-1. Switch to **Buyer account** in MetaMask
-2. Log in as Buyer
-3. Go to **Payments** from the dashboard (or click the **Make Payment** button on the accepted offer)
-4. Click **Make Payment** next to the accepted offer
-5. MetaMask pops up — click **Confirm**
-6. Wait for confirmation — you should see a green "Payment Successful" message
+1. Log in as Buyer
+2. Go to **Payments** from the dashboard (or click the **Make Payment** button on the accepted offer)
+3. Click **Make Payment** next to the accepted offer
+4. Wait for confirmation — you should see a green "Payment Successful" message
 
-### 6.6 Land Inspector Approves the Transfer
+### 5.6 Land Inspector Approves the Transfer
 
-1. Switch to **Land Inspector** in MetaMask
-2. Log in as Land Inspector
-3. Go to **Approve Transaction** from the dashboard
-4. Find the completed payment
-5. Click **Approve Transfer**
-6. MetaMask pops up — click **Confirm**
+1. Log in as Land Inspector
+2. Go to **Approve Transaction** from the dashboard
+3. Find the completed payment
+4. Click **Approve Transfer**
 
 The land ownership is now transferred from the Seller to the Buyer on the blockchain!
 
@@ -305,16 +218,6 @@ Use these PIDs when adding land:
 ---
 
 ## Troubleshooting
-
-### "MetaMask is not connecting"
-- Make sure MetaMask is set to the **Ganache Local** network (not Ethereum Mainnet)
-- Make sure the correct account is selected in MetaMask for the role you're using
-
-### "Transaction failed" or MetaMask shows an error
-- Make sure Ganache is running (`./start.sh` should handle this)
-- If you restarted Ganache, you need to **reset MetaMask's account data**:
-  1. Open MetaMask > Settings > Advanced > **Clear activity tab data**
-  2. This clears the transaction history (MetaMask gets confused when Ganache restarts)
 
 ### "Government services unavailable"
 - Make sure the Gov Portal is running (check http://localhost:4002/api/health in your browser)
